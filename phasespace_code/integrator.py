@@ -27,15 +27,16 @@ def run_integrator(mode, fft_steps=None):
         while step_count < fft_steps:
             q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq)
 
-            #q_traj[step_count] = q
-            #p_traj[step_count] = p
-                    
-            #step_count += 1
+            # main tunes
+            q_traj[step_count] = q
+            p_traj[step_count] = p                    
+            step_count += 1
 
-            if np.cos(psi) > 1.0 - 1e-3:
+            # secondary tunes
+            """if np.cos(psi) > 1.0 - 1e-3:
                 q_traj[step_count] = q
                 p_traj[step_count] = p
-                step_count += 1
+                step_count += 1"""
 
             psi += par.omega_m * par.dt
             par.t += par.dt
@@ -72,7 +73,12 @@ def run_integrator(mode, fft_steps=None):
 
 if __name__ == "__main__":
     mode = sys.argv[1]
-    fft_steps = int(sys.argv[2])
+
+    if len(sys.argv) < 3:
+        fft_steps = None
+    else:
+        fft_steps = int(sys.argv[2])
+    
     q, p = run_integrator(mode, fft_steps)
 
     output_dir = "integrator"

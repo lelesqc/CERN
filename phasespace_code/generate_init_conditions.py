@@ -9,8 +9,6 @@ import functions as fn
 def generate_grid(grid_lim, n_particles):
     X = np.linspace(-0.1, grid_lim, n_particles)
     Y = 0
-    #X = 9.93
-    #Y = -0.3
     
     action, theta = fn.compute_action_angle_inverse(X, Y)
 

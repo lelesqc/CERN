@@ -33,7 +33,6 @@ amplit=tune_data['amplitudes']
 realpart=np.real(tune_data['spectra'])
 imgpart=np.imag(tune_data['spectra'])
 plt.figure(figsize=(8, 5))
-#plt.plot(freqs_list[19, :], amplit[19, :], drawstyle='steps-mid', label='ampiezza')
 plt.plot(freqs_list[21, :], realpart[21, :], drawstyle='steps-mid', label='Reale')
 plt.plot(freqs_list[21, :], imgpart[21, :], drawstyle='steps-mid', label='Immaginario')
 plt.xlabel("Spettro di frequenze")

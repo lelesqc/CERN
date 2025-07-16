@@ -72,37 +72,13 @@ def tune_fft(fft_steps):
         amplitudes[i, :] = amplitude_i
         spectra[i, :] = spectrum_i
         freqs_list[i, :] = fft_freqs_i
-        
-    idx = 39
-
-    x = x[::15, :]  # Downsample for better visualization
-    y = y[::15, :]
-
-    steps = np.arange(x.shape[0])
-    plt.figure(figsize=(8, 6))
-    # Linea che unisce i punti
-    plt.plot(x[:, idx], y[:, idx], color='gray', linewidth=1, alpha=0.5, label='Trajectory Path')
-    # Scatter con punti grandi
-    scatter = plt.scatter(x[:, idx], y[:, idx], c=steps, cmap='viridis', s=150, zorder=2)
-    # Numeri dentro ogni punto
-    for i in range(min(100, x.shape[0])):
-        plt.text(x[i, idx], y[i, idx], str(i), color='white', fontsize=10, ha='center', va='center', zorder=3)
-    # Evidenzia start/end
-    plt.scatter(x[0, idx], y[0, idx], color='red', s=150, label='Start Point', edgecolor='black', zorder=4)
-    plt.scatter(x[-1, idx], y[-1, idx], color='blue', s=150, label='End Point', edgecolor='black', zorder=4)
-    cbar = plt.colorbar(scatter)
-    cbar.set_label('Step index', fontsize=12)
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.title(f'Trajectory of particle with tune = {interp_tunes[idx]:.3f}', fontsize=14)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-
 
     return spectra, freqs_list, interp_tunes, amplitudes
 
 def tune_avg_phase_advance(q, p):
+    xy = np.load(f"action_angle/tune_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}.npz")
+    x = xy['x']
+
     z = (q - np.mean(q)) - 1j*p
     z_normalized = z / np.abs(z)
 
@@ -112,35 +88,31 @@ def tune_avg_phase_advance(q, p):
     delta_angles = np.diff(angles_unwrapped, axis=0)
     delta_angles = np.abs(delta_angles) / (2 * np.pi)
 
-    print(delta_angles.shape)
-
     tunes = np.array([fn.birkhoff_average(delta_angles[:, i]) for i in range(delta_angles.shape[1])])
 
-    #tunes = np.mean(delta_angles, axis=0)
-    print(tunes)
-    plt.scatter(q[0, :], tunes, color='blue')
-    plt.xlabel(r"$\phi$", fontsize=20)
-    plt.title(r"Tunes vs $\phi$")
-    plt.ylabel("Tune", fontsize=20)
-    plt.tight_layout()
-    plt.show()
-
-
-
+    return tunes
 
 
 # -------------------------------------
 
 if __name__ == "__main__":
     fft_steps = int(sys.argv[1])
-
-    spectra, freqs_list, tunes_list, amplitudes = fft(fft_steps)
+    tune_mode = sys.argv[2]
 
     output_dir = "tune_analysis"
+    file_path = os.path.join(output_dir, f"fft_results.npz")
+    if tune_mode == "fft":
+        spectra, freqs_list, tunes_list, amplitudes = tune_fft(fft_steps)
+        np.savez(file_path, spectra=spectra, freqs_list=freqs_list, tunes_list=tunes_list, amplitudes=amplitudes)
+    elif tune_mode == "phaseadvance":
+        data = np.load("integrator/evolved_qp_tune.npz")
+        q = data['q']
+        p = data['p']
+        tunes_list = tune_avg_phase_advance(q, p)
+        np.savez(file_path, tunes_list=tunes_list)
+
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    file_path = os.path.join(output_dir, f"fft_results.npz")
-    np.savez(file_path, spectra=spectra, freqs_list=freqs_list, tunes_list=tunes_list, amplitudes=amplitudes)
 
 

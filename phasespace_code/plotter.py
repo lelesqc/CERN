@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 import params as par
 
-def plot(mode):
+def plot(mode, tune_mode):
     if mode == "phasespace":
         data = np.load(f"action_angle/{mode}_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}.npz")
 
@@ -22,30 +22,6 @@ def plot(mode):
         plt.tight_layout()
         plt.show()
 
-    """
-    if mode == "phasespace":
-        data = np.load(f"action_angle/{mode}_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}.npz")
-        tune_analysis = np.load(f"tune_analysis/fft_results.npz")
-
-        tunes_list = tune_analysis['tunes_list']
-
-        x = data['x']
-        y = data['y']
-
-        print(tunes_list.size)
-
-        plt.figure(figsize=(7,7))
-        scatter = plt.scatter(x, y, s=3, c=tunes_list, cmap='viridis', alpha=1.0)
-        plt.colorbar(scatter, label='Tune')
-        plt.xlabel("X", fontsize=20)
-        plt.ylabel("Y", fontsize=20)
-        plt.xlim(-15, 15)
-        plt.ylim(-15, 15)
-        plt.title("Phase Space colored by Tune", fontsize=18)
-        plt.tick_params(labelsize=18)
-        plt.tight_layout()
-        plt.show()"""
-
     if mode == "tune":
         data = np.load(f"tune_analysis/fft_results.npz")
         action_angle = np.load(f"action_angle/{mode}_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}.npz")
@@ -56,8 +32,11 @@ def plot(mode):
         x_init = x[0, :]            
         actions_init = actions[0, :] 
         
-        spectra = data['spectra']
-        freqs_list = data['freqs_list']
+        if tune_mode == "fft":
+            freqs_list = data['freqs_list']
+            amplitudes = data['amplitudes']
+            spectra = data['spectra']
+        
         tunes_list = data['tunes_list']
 
         actions_init_pos = actions_init
@@ -82,5 +61,6 @@ def plot(mode):
 
 if __name__ == "__main__":
     mode = sys.argv[1]
+    tune_mode = sys.argv[2]
 
-    plot(mode)
+    plot(mode, tune_mode)
