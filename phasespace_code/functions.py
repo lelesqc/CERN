@@ -100,4 +100,24 @@ def birkhoff_average(phase_advances, n=1):
     norm = np.sum(weights)
     return np.sum(weights * phase_advances[1:]) / norm
 
+def shoelace(x_y):
+    x_y = np.array(x_y)
+    x_y = x_y.reshape(-1,2)
+
+    x = x_y[:,0]
+    y = x_y[:,1]
+
+    S1 = np.sum(x*np.roll(y,-1))
+    S2 = np.sum(y*np.roll(x,-1))
+
+    area = .5*np.absolute(S1 - S2)
+
+    return area
+
+def order_points(points):
+    centroid = np.mean(points, axis=0)
+    angles = np.arctan2(points[:,1] - centroid[1], points[:,0] - centroid[0])
+    order = np.argsort(angles)
+    return points[order]
+
 

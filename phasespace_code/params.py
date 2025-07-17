@@ -45,7 +45,7 @@ T_mod = 2 * np.pi / omega_m
 steps = int(round(T_mod / dt))
 
 if fft_steps is None:
-    N_turn = 1000
+    N_turn = 2500
 else:
     N_turn = np.ceil(fft_steps / N)
 

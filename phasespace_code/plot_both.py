@@ -26,14 +26,18 @@ def plot_both_with_tune():
     evolved_for_fft = np.load(f"action_angle/tune_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}.npz")
 
     tunes = data_fft['tunes_list']
+    tunes_list = [[] for _ in range(len(phase_file['x']))]
+
+    for i in range(len(tunes)):
+        for _ in range(len(phase_file['x'][0])):
+            tunes_list[i].append(tunes[i])     
 
     x_last = evolved_for_fft['x'][-1, :]
     y_last = evolved_for_fft['y'][-1, :]
 
     plt.figure(figsize=(7,7))
-    plt.scatter(phase_file['x'], phase_file['y'], s=10, label="Phase space", alpha=1.0, color='orange')
-    sc = plt.scatter(x_last, y_last, c=tunes, cmap='viridis', s=30, label="Evolution (last, tune colored)", alpha=1.0)
-    #plt.scatter(x_last, y_last, s=30, label="Evolution", alpha=1.0, color='blue')
+        
+    sc = plt.scatter(phase_file['x'], phase_file['y'], c=tunes_list, s=10, label="Phase space", alpha=1.0)
     plt.xlabel("X")
     plt.ylabel("Y")
     plt.legend()

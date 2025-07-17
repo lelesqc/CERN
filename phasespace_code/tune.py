@@ -76,8 +76,9 @@ def tune_fft(fft_steps):
     return spectra, freqs_list, interp_tunes, amplitudes
 
 def tune_avg_phase_advance(q, p):
-    xy = np.load(f"action_angle/tune_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}.npz")
-    x = xy['x']
+    #xy = np.load(f"action_angle/tune_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}.npz")
+    #x = xy['x']
+    #y = xy['y']
 
     z = (q - np.mean(q)) - 1j*p
     z_normalized = z / np.abs(z)
@@ -86,7 +87,7 @@ def tune_avg_phase_advance(q, p):
     angles = np.angle(z_normalized, deg=False)
     angles_unwrapped = np.unwrap(angles, axis=0)
     delta_angles = np.diff(angles_unwrapped, axis=0)
-    delta_angles = np.abs(delta_angles) / (2 * np.pi)
+    delta_angles = np.abs(delta_angles) / (2 * np.pi) * par.N
 
     tunes = np.array([fn.birkhoff_average(delta_angles[:, i]) for i in range(delta_angles.shape[1])])
 
@@ -100,7 +101,7 @@ if __name__ == "__main__":
     tune_mode = sys.argv[2]
 
     output_dir = "tune_analysis"
-    file_path = os.path.join(output_dir, f"fft_results.npz")
+    file_path = os.path.join(output_dir, f"tunes_results.npz")
     if tune_mode == "fft":
         spectra, freqs_list, tunes_list, amplitudes = tune_fft(fft_steps)
         np.savez(file_path, spectra=spectra, freqs_list=freqs_list, tunes_list=tunes_list, amplitudes=amplitudes)

@@ -23,7 +23,7 @@ def plot(mode, tune_mode):
         plt.show()
 
     if mode == "tune":
-        data = np.load(f"tune_analysis/fft_results.npz")
+        data = np.load(f"tune_analysis/tunes_results.npz")
         action_angle = np.load(f"action_angle/{mode}_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}.npz")
 
         x = action_angle['x']

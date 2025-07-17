@@ -49,8 +49,6 @@ def run_integrator(mode, fft_steps=None):
         p_sec = np.zeros((par.n_steps, len(p)))
         sec_count = 0
 
-        print(par.n_steps, "steps")
-
         for _ in range(par.n_steps):
             q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq)
          
