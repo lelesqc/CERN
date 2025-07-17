@@ -8,6 +8,8 @@ from scipy.special import ellipk
 import params as par
 
 def generate_init(radius, n_particles):
+    random.seed(42)
+
     X_list = np.empty(n_particles)
     Y_list = np.empty(n_particles)
     kappa_squared_list = np.empty(n_particles)

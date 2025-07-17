@@ -25,7 +25,7 @@ def plot(poincare_mode, n_particles, n_to_plot):
     if poincare_mode in ["first", "last"]:
         plt.figure(figsize=(7,7))
         plt.scatter(x, y, s=3, label=r"Final distribution", alpha=1.0)
-        #plt.xlabel("X", fontsize=20)
+        plt.xlabel("X", fontsize=20)
         plt.ylabel("Y", fontsize=16)
         plt.xlim(-15, 15)
         plt.ylim(-15, 15)
@@ -33,8 +33,8 @@ def plot(poincare_mode, n_particles, n_to_plot):
         plt.tick_params(labelsize=18)
         plt.tight_layout()
         plt.show()
+
     elif poincare_mode == "all":
-        
         n_sections = len(x) // n_particles
         idx_to_plot = np.linspace(0, n_sections-1, n_to_plot, dtype=int)
 
@@ -44,18 +44,17 @@ def plot(poincare_mode, n_particles, n_to_plot):
         for ax, i in zip(axes, idx_to_plot):
             ax.scatter(x[i*n_particles:(i+1)*n_particles], y[i*n_particles:(i+1)*n_particles], s=2)
             ax.set_xlabel("X")
-            ax.set_ylabel("Y")
+            ax.set_ylabel("Y") 
 
         plt.suptitle(f"Poincaré sections for {poincare_mode} mode", fontsize=20)
         plt.tight_layout()
         plt.subplots_adjust(top=0.85)  # Adjust top to make room for the suptitle
         plt.show()
-    elif poincare_mode == "none":
-        print(len(x))
 
+    elif poincare_mode == "none":
         plt.figure(figsize=(7,7))
         plt.scatter(x, y, s=3, label=r"Final distribution", alpha=1.0)
-        #plt.xlabel("X", fontsize=20)
+        plt.xlabel("X", fontsize=20)
         plt.ylabel("Y", fontsize=16)
         plt.xlim(-15, 15)
         plt.ylim(-15, 15)

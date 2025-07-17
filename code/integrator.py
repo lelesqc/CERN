@@ -63,7 +63,6 @@ def run_integrator(poincare_mode):
                 q_single = np.copy(q)
                 p_single = np.copy(p)
                 find_poincare = True
-                print(f"{np.cos(psi)}, {par.a_lambda(par.t):.5f}, {par.omega_lambda(par.t)/par.omega_s:.5f}")
             
         psi += par.omega_lambda(par.t) * par.dt
         par.t += par.dt
@@ -89,7 +88,7 @@ def run_integrator(poincare_mode):
     q = np.array(q)
     p = np.array(p)
 
-    return q, p, psi_val
+    return q, p, par.t, psi
 
 
 # --------------- Save results ----------------
@@ -97,11 +96,11 @@ def run_integrator(poincare_mode):
 
 if __name__ == "__main__":
     poincare_mode = sys.argv[1]
-    q, p, psi = run_integrator(poincare_mode)
+    q, p, t, psi = run_integrator(poincare_mode)
 
     output_dir = "integrator"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     file_path = os.path.join(output_dir, f"evolved_qp_{poincare_mode}.npz")
-    np.savez(file_path, q=q, p=p, psi=psi)
+    np.savez(file_path, q=q, p=p, t=t, psi=psi)

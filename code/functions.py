@@ -29,6 +29,11 @@ def Delta_q(p, psi, t, dt):
     #print(f"{t:.3f}, {np.cos(psi)}, {par.a_lambda(t):.5f}, {par.omega_lambda(t)/par.omega_s:.5f}")
     return par.lambd**2 * p * dt + par.a_lambda(t) * par.omega_lambda(t) * np.cos(psi) * dt
 
+def Delta_q_fixed(p, psi, a, omega_m, dt):
+    #print(np.cos(psi))
+
+    return par.lambd**2 * p * dt + a * omega_m * np.cos(psi) * dt
+
 def compute_action_angle_inverse(X, Y):
     action = (X**2 + Y**2) / (2)
     theta = np.arctan2(-Y, X)
@@ -66,3 +71,29 @@ def find_h0_numerical(I_target):
     
 def compute_angle(q, p):    
     return np.arctan2(p, q)
+
+def pts_in_section(points, x_c, y_c, x_A, y_A, R=None):
+    points = np.array(points)  # Converti in numpy array se non lo è già
+    x, y = points[:, 0], points[:, 1]
+
+    # Calcola angoli dei punti di bordo
+    dx_A = x_A - x_c
+    theta_A = np.arctan2(y_A, dx_A)
+    theta_min = -theta_A
+    theta_max = theta_A
+
+    # Calcola angoli e distanze dei punti
+    dx = x - x_c
+    dy = y - y_c
+    theta = np.arctan2(dy, dx)
+    r = np.sqrt(dx**2 + dy**2)
+
+    # Filtra i punti
+    angle_mask = (theta >= theta_min) & (theta <= theta_max)
+    if R is not None:
+        radius_mask = r <= R
+        mask = angle_mask & radius_mask
+    else:
+        mask = angle_mask
+
+    return points[mask]
