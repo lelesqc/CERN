@@ -26,7 +26,7 @@ def dV_dq(q):
     return par.A**2 * np.sin(q)
 
 def Delta_q(p, psi, t, dt):
-    #print(f"{t:.3f}, {np.cos(psi)}, {par.a_lambda(t):.5f}, {par.omega_lambda(t)/par.omega_s:.5f}")
+    #print(f"{t:.3f}, {par.a_lambda(t):.5f}, {np.cos(psi):2f}")
     return par.lambd**2 * p * dt + par.a_lambda(t) * par.omega_lambda(t) * np.cos(psi) * dt
 
 def Delta_q_fixed(p, psi, a, omega_m, dt):

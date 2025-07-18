@@ -5,7 +5,7 @@ import numpy as np
 import params as par
 import functions as fn
 
-def run_integrator(poincare_mode):
+def run_integrator(poincare_mode, n_particles):
     data = np.load("init_conditions/init_distribution.npz")
 
     q_init = data['q']
@@ -34,35 +34,41 @@ def run_integrator(poincare_mode):
     fixed_params = False
 
     while not find_poincare:
-        q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq)
-
         if par.t >= par.T_tot:
             fixed_params = True
 
+        q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq)        
+
         if poincare_mode == "none":
-            q_all[step] = np.copy(q)
-            p_all[step] = np.copy(p)
-            if fixed_params:
+            if step < q_all.shape[0]:  
+                q_all[step] = np.copy(q)
+                p_all[step] = np.copy(p)
+            if par.t >= par.T_tot:
+                find_poincare = True
                 psi_val = psi
                 break
-
         if np.cos(psi) > 1.0 - 1e-3 and poincare_mode != "none":
             if poincare_mode == "first":
                 if q_single is None:
                     q_single = np.copy(q)
                     p_single = np.copy(p)
                     find_poincare = True
+                    psi_val = psi
+                    break
             elif poincare_mode == "all":
                 q_sec[sec_count] = np.copy(q)
                 p_sec[sec_count] = np.copy(p)
                 sec_count += 1
                 if fixed_params:
                     find_poincare = True
-                    print(psi)
+                    psi_val = psi
+                    break
             elif poincare_mode == "last" and fixed_params:
                 q_single = np.copy(q)
                 p_single = np.copy(p)
                 find_poincare = True
+                psi_val = psi
+                break
             
         psi += par.omega_lambda(par.t) * par.dt
         par.t += par.dt
@@ -79,8 +85,8 @@ def run_integrator(poincare_mode):
         q = q_sec[:sec_count]
         p = p_sec[:sec_count]
     elif poincare_mode == "none":
-        q = np.array(q_all[:step])
-        p = np.array(p_all[:step])
+        q = np.array(q_all)
+        p = np.array(p_all)
     else:
         q = q_single
         p = p_single
@@ -88,7 +94,7 @@ def run_integrator(poincare_mode):
     q = np.array(q)
     p = np.array(p)
 
-    return q, p, par.t, psi
+    return q, p, psi_val
 
 
 # --------------- Save results ----------------
@@ -96,11 +102,13 @@ def run_integrator(poincare_mode):
 
 if __name__ == "__main__":
     poincare_mode = sys.argv[1]
-    q, p, t, psi = run_integrator(poincare_mode)
+    n_particles = int(sys.argv[2])
+    
+    q, p, psi_val = run_integrator(poincare_mode, n_particles)
 
     output_dir = "integrator"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    file_path = os.path.join(output_dir, f"evolved_qp_{poincare_mode}.npz")
-    np.savez(file_path, q=q, p=p, t=t, psi=psi)
+    file_path = os.path.join(output_dir, f"evolved_qp_{poincare_mode}_{n_particles}.npz")
+    np.savez(file_path, q=q, p=p, psi=psi_val)

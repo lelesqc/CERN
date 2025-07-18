@@ -6,8 +6,8 @@ from tqdm.auto import tqdm
 import params as par
 import functions as fn
 
-def run_action_angle(poincare_mode):
-    data = np.load(f"integrator/evolved_qp_{poincare_mode}.npz")
+def run_action_angle(poincare_mode, n_particles):
+    data = np.load(f"integrator/evolved_qp_{poincare_mode}_{n_particles}.npz")
 
     q = data['q']
     p = data['p']
@@ -21,7 +21,7 @@ def run_action_angle(poincare_mode):
         y = np.zeros((n_steps, n_particles))
         
         for j in tqdm(range(n_particles)):
-            for i in tqdm(range(n_steps)):
+            for i in range(n_steps):
                 h_0 = fn.H0_for_action_angle(q[i, j], p[i, j])
                 kappa_squared = 0.5 * (1 + h_0 / (par.A**2))
 
@@ -71,7 +71,9 @@ def run_action_angle(poincare_mode):
 
 if __name__ == "__main__":
     poincare_mode = sys.argv[1]
-    x, y, actions_list = run_action_angle(poincare_mode)
+    n_particles = int(sys.argv[2])
+
+    x, y, actions_list = run_action_angle(poincare_mode, n_particles)
 
     a_start = par.a_lambda(par.T_percent)
     omega_start = par.omega_lambda(par.T_percent)
@@ -89,5 +91,5 @@ if __name__ == "__main__":
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    file_path = os.path.join(output_dir, f"{poincare_mode}_{str_title}.npz")
+    file_path = os.path.join(output_dir, f"{poincare_mode}_{str_title}_{n_particles}.npz")
     np.savez(file_path, x=x, y=y, actions=actions_list)

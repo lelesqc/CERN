@@ -1,3 +1,6 @@
+#%%
+
+import os
 import numpy as np
 import params as par
 import matplotlib.pyplot as plt
@@ -15,12 +18,12 @@ t = integrator_data['t']
 
 x = xy_data['x']
 y = xy_data['y']
-tunes_list = tunes_data['tunes_list']
+#tunes_list = tunes_data['tunes_list']
 
-print(x.shape, tunes_list.shape)
+#print(x.shape, tunes_list.shape)
 
-mask = (tunes_list > 0.78) & (tunes_list < 0.81) & (x**2 + y**2 > 2)
-tunes_list = tunes_list[mask]
+mask = (x**2 + y**2 > 2)
+#tunes_list = tunes_list[mask]
 x = x[mask]
 y = y[mask]
 
@@ -31,12 +34,9 @@ mask_x = (x >= center[0]) & (x <= np.max(x))
 x = x[mask_x]
 y = y[mask_x]
 
-x = 11
-y = 0.0
-
 xy = np.column_stack((x, y))
 
-starting_points = fn.pts_in_section(xy, center[0], center[1], np.max(x), 2.0)
+starting_points = fn.pts_in_section(xy, center[0], center[1], np.max(x), 1.0)
 
 kappa_squared_list = np.empty(starting_points.shape[0])
 Omega_list = np.empty(starting_points.shape[0])
@@ -63,8 +63,10 @@ q = q_init.copy()
 p = p_init.copy()
 
 a = 0.05
-omega_m = 0.8
+omega_m = 0.8 * par.omega_s
 extra_steps = 100000
+
+#%%
 
 q_traj = np.empty((extra_steps, len(q_init)))
 p_traj = np.empty((extra_steps, len(p_init)))
@@ -89,6 +91,8 @@ q = q_traj[:step_count]
 p = p_traj[:step_count]
 n_particles = len(q_init)
 
+#%%
+
 x = np.zeros((len(q), n_particles))
 y = np.zeros((len(q), n_particles))
 for j in tqdm(range(n_particles)):
@@ -108,5 +112,13 @@ for j in tqdm(range(n_particles)):
 x = np.array(x)
 y = np.array(y)
 
-plt.scatter(x, y, s=3, label="Phase Space for final distr.", alpha=1.0)
+output_dir = "tune_stuff"
+if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+np.savez("./tune_stuff/island_particles.npz", x=x, y=y)
+
+#%%
+
+plt.scatter(x, y, s=1, label="Phase Space for final distr.", alpha=1.0)
 plt.show()
+
