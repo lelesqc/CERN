@@ -6,13 +6,15 @@ import params as par
 
 def plot(mode, tune_mode):
     if mode == "phasespace":
+        idx = 28
+
         data = np.load(f"action_angle/{mode}_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}.npz")
 
         x = data['x']
         y = data['y']
 
         plt.figure(figsize=(7,7))
-        plt.scatter(x, y, s=3, label=r"Phase Space for final distr.", alpha=1.0)
+        plt.scatter(x[:, idx], y[:, idx], s=3, label=r"Phase Space for final distr.", alpha=1.0)
         plt.xlabel("X", fontsize=20)
         plt.ylabel("Y", fontsize=20)
         plt.xlim(-15, 15)

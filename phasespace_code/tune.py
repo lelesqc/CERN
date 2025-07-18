@@ -2,9 +2,7 @@ import os
 import sys
 import numpy as np
 import params as par
-import matplotlib.pyplot as plt
 import functions as fn
-
 from scipy.fft import fft, fftfreq
 from scipy.signal.windows import hann
 
@@ -76,14 +74,9 @@ def tune_fft(fft_steps):
     return spectra, freqs_list, interp_tunes, amplitudes
 
 def tune_avg_phase_advance(q, p):
-    #xy = np.load(f"action_angle/tune_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}.npz")
-    #x = xy['x']
-    #y = xy['y']
-
     z = (q - np.mean(q)) - 1j*p
     z_normalized = z / np.abs(z)
 
-    #angles = np.arctan2(p, q - np.mean(q)) 
     angles = np.angle(z_normalized, deg=False)
     angles_unwrapped = np.unwrap(angles, axis=0)
     delta_angles = np.diff(angles_unwrapped, axis=0)

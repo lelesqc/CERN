@@ -123,7 +123,7 @@ def calculate_polygon_area(polygon):
 
 # -------------------------------------------------------------------
 
-data = np.load("tune_analysis/fft_results.npz")
+#data = np.load("tune_analysis/fft_results.npz")
 action_angle_evolution = np.load(f"../code/action_angle/none_a0.025-0.050_nu0.90-0.80.npz")
 integrator = np.load(f"../code/integrator/evolved_qp_none.npz")
 
