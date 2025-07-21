@@ -2,10 +2,10 @@
 
 GRID_LIM=12.9
 PARTICLES=80
-FFT_STEPS=4096
+FFT_STEPS=32768
 # 4096, 8192, 16384, 32768
 
-MODE="phasespace"  # Options: "tune", "phasespace"
+MODE="tune"  # Options: "tune", "phasespace"
 TUNE_MODE="phaseadvance"  # Options: "fft", "phaseadvance"
 
 DATA_FILE="../code/integrator/evolved_qp_last.npz"

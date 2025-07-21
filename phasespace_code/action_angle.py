@@ -7,9 +7,8 @@ import params as par
 import functions as fn
 
 
-def run_action_angle(mode):
+def run_action_angle(mode, q, p):
     data = np.load(f"integrator/evolved_qp_{mode}.npz")
-
     q = data['q']
     p = data['p']
 
