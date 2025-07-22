@@ -15,7 +15,7 @@ def plot(poincare_mode, n_particles, n_to_plot):
     a_end_str = f"{a_end:.3f}"
     omega_end_str = f"{omega_end:.2f}"
 
-    str_title = f"a{a_start_str}-{a_end_str}_nu{float(omega_start_str)/par.omega_s:.2f}-{float(omega_end_str)/par.omega_s:.2f}"
+    str_title = f"a{a_start_str}-{a_end_str}_nu{float(omega_start_str)/par.omega_s:.2f}-{float(omega_end_str)/par.omega_s:.2f}_{n_particles}"
 
     data = np.load(f"action_angle/{poincare_mode}_{str_title}.npz")
 
