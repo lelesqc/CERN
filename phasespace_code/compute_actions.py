@@ -6,17 +6,14 @@ import params as par
 import functions as fn
 import action_angle as aa
 
-par.epsilon = 0
-par.omega_m = 0.8
-
 starting_data = np.load("../code/init_conditions/init_distribution.npz")
 q_init = starting_data['q']
 p_init = starting_data['p']
 
 n_particles = len(q_init)
 
-q_traj = np.zeros((par.n_steps, n_particles), dtype=np.float32)
-p_traj = np.zeros((par.n_steps, n_particles), dtype=np.float32)
+q_traj = np.zeros((par.n_steps // 10, n_particles), dtype=np.float16)
+p_traj = np.zeros((par.n_steps // 10, n_particles), dtype=np.float16)
 
 q_traj[0, :] = q_init
 p_traj[0, :] = p_init
@@ -27,7 +24,7 @@ p = np.copy(p_traj[0, :])
 psi = 0
 
 check_array = np.zeros(n_particles, dtype=bool)
-angles = np.zeros((par.n_steps, n_particles), dtype=np.float32)
+angles = np.zeros((par.n_steps // 10, n_particles), dtype=np.float16)
 angles[0, :] = np.arctan2(p, q - np.pi)
 
 # ------ integrator -------
