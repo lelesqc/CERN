@@ -74,6 +74,7 @@ def tune_fft(fft_steps):
     return spectra, freqs_list, interp_tunes, amplitudes
 
 def tune_avg_phase_advance(q, p):
+    print(q.shape)
     z = (q - np.mean(q)) - 1j*p
     z_normalized = z / np.abs(z)
 

@@ -1,6 +1,7 @@
+import os
 import numpy as np
-import matplotlib.pyplot as plt
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 import params as par
 import functions as fn
@@ -10,10 +11,12 @@ starting_data = np.load("../code/init_conditions/init_distribution.npz")
 q_init = starting_data['q']
 p_init = starting_data['p']
 
+print(q_init.shape, p_init.shape)
+
 n_particles = len(q_init)
 
-q_traj = np.zeros((par.n_steps // 10, n_particles), dtype=np.float16)
-p_traj = np.zeros((par.n_steps // 10, n_particles), dtype=np.float16)
+q_traj = np.zeros((par.n_steps, n_particles), dtype=np.float16)
+p_traj = np.zeros((par.n_steps, n_particles), dtype=np.float16)
 
 q_traj[0, :] = q_init
 p_traj[0, :] = p_init
@@ -24,7 +27,7 @@ p = np.copy(p_traj[0, :])
 psi = 0
 
 check_array = np.zeros(n_particles, dtype=bool)
-angles = np.zeros((par.n_steps // 10, n_particles), dtype=np.float16)
+angles = np.zeros((par.n_steps, n_particles), dtype=np.float16)
 angles[0, :] = np.arctan2(p, q - np.pi)
 
 # ------ integrator -------
@@ -89,4 +92,5 @@ for x, y in zip(x_list, y_list):
 
 init_actions = np.array(init_actions)
 print(f"Initial actions:", np.round(init_actions, 1))
-
+#os.makedirs("actions_analysis", exist_ok=True)
+#np.savez("actions_analysis/init_actions_10000.npz", init_actions=init_actions)

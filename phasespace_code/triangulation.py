@@ -3,10 +3,18 @@ import matplotlib.pyplot as plt
 import alphashape
 from shapely.geometry import Polygon, MultiPolygon
 
-xy = np.load(f"../code/tune_stuff/island_particles.npz")
+#xy = np.load(f"../code/tune_stuff/island_particles.npz")
+tunes = np.load("tune_analysis/tunes_results.npz")['tunes_list']
+xy = np.load("../code/action_angle/last_a0.025-0.050_nu0.90-0.80_10000.npz")
 
 x = xy['x']
 y = xy['y']
+
+mask_tunes = (tunes < 0.85) & (x**2 + y**2 > 2)
+#mask_tunes = tunes > 0.85
+
+x = x[mask_tunes]
+y = y[mask_tunes]
 
 XY = np.stack((x, y), axis=-1)  # shape: (n_pts, n_particles, 2)
 XY_to_plot = np.array(XY)
