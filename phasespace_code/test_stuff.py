@@ -4,18 +4,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 import functions as fn
 import os
+import alphashape
+from shapely.geometry import Polygon, MultiPolygon 
+from scipy.special import ellipk
+
 import params as par
 from tqdm import tqdm
 
-tunes = np.load("tune_analysis/tunes_results.npz")['tunes_list']
-data = np.load("../code/action_angle/last_a0.025-0.050_nu0.90-0.80_10000.npz")
-data_integrator = np.load("../code/integrator/evolved_qp_last_10000.npz")
+tunes = np.load("tune_analysis/tunes_results.npz")['tunes_list'][::100]
+xy_data = np.load("../code/action_angle/last_a0.025-0.050_nu0.90-0.80_10000.npz")
+integrator_data = np.load("../code/integrator/evolved_qp_last_10000.npz")
 
-q = data_integrator['q']
-p = data_integrator['p']
+psi = integrator_data['psi']
 
-x = data['x']
-y = data['y']
+x = xy_data['x']
+y = xy_data['y']
 
 mask_tunes_island = (tunes < 0.85) & (x**2 + y**2 > 2)
 mask_tunes_center = ~mask_tunes_island 
@@ -27,113 +30,146 @@ y_island = y[mask_tunes_island]
 x_center = x[mask_tunes_center]
 y_center = y[mask_tunes_center]
 
-x0 = -0.95
-y0 = 0.0
+center_isl = (9.93, -0.27)
+center_cen = (-0.95, 0.0)
 
-psi = 0
-q = q[mask_tunes_center]
-p = p[mask_tunes_center]
+positive_x_island_mask = x_island != 0
+positive_x_center_mask = x_center != 0
 
-n_points = 5000
-n_particles = len(q)
+x_island_positive = x_island[positive_x_island_mask]
+y_island_positive = y_island[positive_x_island_mask]
 
-plt.scatter(x_center, y_center, s=1, label='Center', color='blue')
-plt.show()
+x_center_positive = x_center[positive_x_center_mask]
+y_center_positive = y_center[positive_x_center_mask]
 
-#%%
+#print(x_island_positive.shape, x_center_positive.shape)
 
-#--------- integrator ------------
+xy = np.column_stack((x, y))
+#xy = np.column_stack((x_center_positive, y_center_positive))
 
-q_traj = np.zeros((n_points+1, n_particles), dtype=np.float16)
-p_traj = np.zeros((n_points+1, n_particles), dtype=np.float16)
+starting_points = xy
 
-q_traj[0, :] = q
-p_traj[0, :] = p
+kappa_squared_list = np.empty(starting_points.shape[0])
+Omega_list = np.empty(starting_points.shape[0])
+Q_list = np.empty(starting_points.shape[0])
+P_list = np.empty(starting_points.shape[0])
 
-q = np.copy(q_traj[0, :])
-p = np.copy(p_traj[0, :])
+action, theta = fn.compute_action_angle_inverse(starting_points[:, 0], starting_points[:, 1])
+for i, act in enumerate(action):
+        h_0 = fn.find_h0_numerical(act)
+        kappa_squared = 0.5 * (1 + h_0 / (par.A**2))
+        kappa_squared_list[i] = kappa_squared
+        Omega_list[i] = np.pi / 2 * (par.A / ellipk(kappa_squared))
 
-check_array = np.zeros(n_particles, dtype=bool)
-angles = np.zeros((n_points+1, n_particles), dtype=np.float16)
-angles[0, :] = np.arctan2(p, q - np.pi)
-step = 0
+for i, (angle, freq, k2) in enumerate(zip(theta, Omega_list, kappa_squared_list)):
+    Q, P = fn.compute_Q_P(angle, freq, k2)
+    Q_list[i] = Q
+    P_list[i] = P
 
-while step < n_points:
-    q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq)
+phi, delta = fn.compute_phi_delta(Q_list, P_list)
+phi = np.mod(phi, 2 * np.pi) 
+q_init = np.array(phi)
+p_init = np.array(delta)
 
-    if np.cos(psi) > 1.0 - 1e-3:
-        q_traj[step + 1, :] = q
-        p_traj[step + 1, :] = p
-        step += 1
+q = q_init.copy()
+p = p_init.copy()
 
-    #angles[step + 1, :] = np.arctan2(p, q - np.pi)
+extra_steps = 5000
+a = 0.05
+omega_m = 0.8 * par.omega_s
+t = 0.0
 
-    psi += par.omega_m * par.dt
+q_traj = np.empty((extra_steps, len(q_init)))
+p_traj = np.empty((extra_steps, len(p_init)))
+step_count = 0
+
+while step_count < extra_steps:
+    q += fn.Delta_q_fixed(p, psi, a, omega_m, par.dt/2)
+    q = np.mod(q, 2 * np.pi)        
+    t_mid = t + par.dt/2
+    p += par.dt * fn.dV_dq(q)
+    q += fn.Delta_q_fixed(p, psi, a, omega_m, par.dt/2)
+    q = np.mod(q, 2 * np.pi)
+
+    if np.cos(psi) > 1.0 - 1e-4:
+        q_traj[step_count] = q
+        p_traj[step_count] = p                    
+        step_count += 1
+
+    psi += omega_m * par.dt
     par.t += par.dt
 
-#angles = angles[:step, :]
-#angles = np.unwrap(angles, axis=0)
+q = q_traj[:step_count]
+p = p_traj[:step_count]
+n_particles = len(q_init)
 
-q_cut = q_traj
-p_cut = p_traj
+print("fatto")
 
-plt.scatter(q_cut[:, 10], p_cut[:, 10], s=1, label='Closed Trajectory', color='red')
-plt.show()
 
 #%%
 
+x = np.zeros((len(q), n_particles))
+y = np.zeros((len(q), n_particles))
+for j in tqdm(range(n_particles)):
+    for i in range(len(q)):
+        h_0 = fn.H0_for_action_angle(q[i, j], p[i, j])
+        kappa_squared = 0.5 * (1 + h_0 / (par.A**2))
 
-#q_cut = []
-#p_cut = []
+        if 0 < kappa_squared < 1:
+            Q = (q[i, j] + np.pi) / par.lambd
+            P = par.lambd * p[i, j]
 
-"""for i in range(n_particles):
-    mask = np.abs(angles[:, i] - angles[0, i]) >= 2 * np.pi
-    if np.any(mask):
-        idx = np.argmax(mask)
-        q_cut.append(q_traj[:idx, i])
-        p_cut.append(p_traj[:idx, i]) """
+            action, theta = fn.compute_action_angle(kappa_squared, P)
 
+            x[i, j] = np.sqrt(2 * action) * np.cos(theta)
+            y[i, j] = - np.sqrt(2 * action) * np.sin(theta) * np.sign(q[i, j]-np.pi)
 
-# ------ cartesian -------
+x = np.array(x)
+y = np.array(y)
 
-x_list = []
-y_list = []
+#XY = np.zeros((x.shape[0], x.shape[1], 2), dtype=np.float16)
 
-for q, p in tqdm(zip(q_cut, p_cut), total=len(q_cut)):
-        n_steps = len(q)
-        x = np.zeros(n_steps)
-        y = np.zeros(n_steps)
-        actions = np.zeros(n_steps)
-        for i in range(n_steps):
-            h_0 = fn.H0_for_action_angle(q[i], p[i])
-            kappa_squared = 0.5 * (1 + h_0 / (par.A**2))
-            if 0 < kappa_squared < 1:
-                Q = (q[i] + np.pi) / par.lambd
-                P = par.lambd * p[i]
-                action, theta = fn.compute_action_angle(kappa_squared, P)
-                actions[i] = action
-                x[i] = np.sqrt(2 * action) * np.cos(theta)
-                y[i] = - np.sqrt(2 * action) * np.sin(theta) * np.sign(q[i] - np.pi)
-        x_list.append(x)
-        y_list.append(y)
+# %%
 
+alpha = 0.25
+actions = []
 
-init_actions = []
+for i in tqdm(range(x.shape[1])):  
+    XY_to_plot = np.stack((x[:, i], y[:, i]), axis=-1)    # shape: (n_pts, n_particles, 2)
+    concave_polygon = XY_to_plot
 
-for x, y in zip(x_list, y_list):
-    # Chiudi il poligono aggiungendo il primo punto in fondo
-    x_closed = np.append(x, x[0])
-    y_closed = np.append(y, y[0])
-    # Shoelace formula
-    area = 0.5 * np.abs(np.dot(x_closed[:-1], y_closed[1:]) - np.dot(y_closed[:-1], x_closed[1:]))
+    x_flat = x[:, i].flatten()
+    y_flat = y[:, i].flatten()
+
+    points = np.column_stack((x_flat, y_flat))
+
+    polygon = alphashape.alphashape(points, alpha)
+
+    if not polygon.is_valid:
+        polygon = polygon.buffer(0)
+
+    area = polygon.area
     action = area / (2 * np.pi)
-    init_actions.append(action)
 
-init_actions = np.array(init_actions)
-print(f"Initial actions:", np.round(init_actions, 1))
+actions.append(action)
+actions = np.array(actions)
 
-plt.scatter(x_list[:, 10], y_list[:, 10], s=1, label='Closed Trajectory')
-plt.show()
+np.savez("actions_analysis/final_actions_10000.npz", final_actions=actions)
+
+"""
+if i % 3 == 0:
+    if isinstance(polygon, Polygon):
+        plt.plot(*polygon.exterior.xy, color='red', label='Concave Hull')
+        plt.fill(*polygon.exterior.xy, alpha=0.3, color='green')
+    elif isinstance(polygon, MultiPolygon):
+        for poly in polygon.geoms:
+            plt.plot(*poly.exterior.xy, color='red')
+            plt.fill(*poly.exterior.xy, alpha=0.3, color='green')
+
+    plt.scatter(points[:, 0], points[:, 1], s=1, color='blue')
+    plt.title(f"Area: {area:.2f}")
+    plt.show()"""
+
 
 
 # %%

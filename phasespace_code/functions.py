@@ -29,6 +29,11 @@ def Delta_q(p, psi, t, dt):
     #print(f"{t:.3f}, {np.cos(psi)}, {par.a:.5f}, {par.omega_m/par.omega_s:.5f}")
     return par.lambd**2 * p * dt + par.a * par.omega_m * np.cos(psi) * dt
 
+def Delta_q_fixed(p, psi, a, omega_m, dt):
+    #print(np.cos(psi))
+
+    return par.lambd**2 * p * dt + a * omega_m * np.cos(psi) * dt
+
 def compute_I_from_h0(h0, A):
     kappa_squared = 0.5 * (1 + h0 / (A**2))
     if kappa_squared < 0 or kappa_squared > 1:
