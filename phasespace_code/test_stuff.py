@@ -1,5 +1,3 @@
-#%%
-
 import numpy as np
 import matplotlib.pyplot as plt
 import functions as fn
@@ -11,7 +9,7 @@ from scipy.special import ellipk
 import params as par
 from tqdm import tqdm
 
-tunes = np.load("tune_analysis/tunes_results.npz")['tunes_list'][::100]
+tunes = np.load("tune_analysis/tunes_results.npz")['tunes_list']
 xy_data = np.load("../code/action_angle/last_a0.025-0.050_nu0.90-0.80_10000.npz")
 integrator_data = np.load("../code/integrator/evolved_qp_last_10000.npz")
 
@@ -24,6 +22,12 @@ mask_tunes_island = (tunes < 0.85) & (x**2 + y**2 > 2)
 mask_tunes_center = ~mask_tunes_island 
 tunes_center = tunes[mask_tunes_center]
 tunes_island = tunes[mask_tunes_island]
+
+idx_island = np.where(mask_tunes_island)[0]
+idx_center = np.where(mask_tunes_center)[0]
+
+is_island = np.zeros(x.shape, dtype=bool)
+is_island[idx_island] = True
 
 x_island = x[mask_tunes_island]
 y_island = y[mask_tunes_island]
@@ -38,14 +42,13 @@ positive_x_center_mask = x_center != 0
 
 x_island_positive = x_island[positive_x_island_mask]
 y_island_positive = y_island[positive_x_island_mask]
-
 x_center_positive = x_center[positive_x_center_mask]
 y_center_positive = y_center[positive_x_center_mask]
 
 #print(x_island_positive.shape, x_center_positive.shape)
 
 xy = np.column_stack((x, y))
-#xy = np.column_stack((x_center_positive, y_center_positive))
+#xy = np.column_stack((x_island_positive, y_island_positive))
 
 starting_points = xy
 
@@ -103,10 +106,6 @@ q = q_traj[:step_count]
 p = p_traj[:step_count]
 n_particles = len(q_init)
 
-print("fatto")
-
-
-#%%
 
 x = np.zeros((len(q), n_particles))
 y = np.zeros((len(q), n_particles))
@@ -129,47 +128,43 @@ y = np.array(y)
 
 #XY = np.zeros((x.shape[0], x.shape[1], 2), dtype=np.float16)
 
-# %%
-
-alpha = 0.25
 actions = []
 
 for i in tqdm(range(x.shape[1])):  
-    XY_to_plot = np.stack((x[:, i], y[:, i]), axis=-1)    # shape: (n_pts, n_particles, 2)
-    concave_polygon = XY_to_plot
+    x_traj = x[:, i]
+    y_traj = y[:, i]
+    points = np.column_stack((x_traj, y_traj))
 
-    x_flat = x[:, i].flatten()
-    y_flat = y[:, i].flatten()
+    points = np.unique(points, axis=0)
 
-    points = np.column_stack((x_flat, y_flat))
+    if len(points) < 4:
+        actions.append(np.nan)
+        continue
 
+    alpha = 0.3 if is_island[i] else 0.1    
     polygon = alphashape.alphashape(points, alpha)
-
+    
     if not polygon.is_valid:
         polygon = polygon.buffer(0)
 
     area = polygon.area
     action = area / (2 * np.pi)
+    actions.append(action)
 
-actions.append(action)
+    """if i % 2 == 0:
+        if isinstance(polygon, Polygon):
+            plt.plot(*polygon.exterior.xy, color='red', label='Concave Hull')
+            plt.fill(*polygon.exterior.xy, alpha=0.3, color='green')
+        elif isinstance(polygon, MultiPolygon):
+            for poly in polygon.geoms:
+                plt.plot(*poly.exterior.xy, color='red')
+                plt.fill(*poly.exterior.xy, alpha=0.3, color='green')
+
+        plt.scatter(points[:, 0], points[:, 1], s=1, color='blue')
+        plt.title(f"Area: {area:.2f}")
+        plt.show()"""
+
+
 actions = np.array(actions)
 
-np.savez("actions_analysis/final_actions_10000.npz", final_actions=actions)
-
-"""
-if i % 3 == 0:
-    if isinstance(polygon, Polygon):
-        plt.plot(*polygon.exterior.xy, color='red', label='Concave Hull')
-        plt.fill(*polygon.exterior.xy, alpha=0.3, color='green')
-    elif isinstance(polygon, MultiPolygon):
-        for poly in polygon.geoms:
-            plt.plot(*poly.exterior.xy, color='red')
-            plt.fill(*poly.exterior.xy, alpha=0.3, color='green')
-
-    plt.scatter(points[:, 0], points[:, 1], s=1, color='blue')
-    plt.title(f"Area: {area:.2f}")
-    plt.show()"""
-
-
-
-# %%
+np.savez("actions_analysis/final_actions_10000_test.npz", final_actions=actions)

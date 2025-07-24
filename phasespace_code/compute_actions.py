@@ -82,10 +82,9 @@ for q, p in tqdm(zip(q_cut, p_cut), total=len(q_cut)):
 init_actions = []
 
 for x, y in zip(x_list, y_list):
-    # Chiudi il poligono aggiungendo il primo punto in fondo
     x_closed = np.append(x, x[0])
     y_closed = np.append(y, y[0])
-    # Shoelace formula
+
     area = 0.5 * np.abs(np.dot(x_closed[:-1], y_closed[1:]) - np.dot(y_closed[:-1], x_closed[1:]))
     action = area / (2 * np.pi)
     init_actions.append(action)
