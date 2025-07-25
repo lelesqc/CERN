@@ -54,6 +54,7 @@ def plot(poincare_mode, n_particles, n_to_plot):
     elif poincare_mode == "none":
         plt.figure(figsize=(7,7))
         plt.scatter(x, y, s=3, label=r"Final distribution", alpha=1.0)
+        print(x.shape)
         plt.xlabel("X", fontsize=20)
         plt.ylabel("Y", fontsize=16)
         plt.xlim(-15, 15)

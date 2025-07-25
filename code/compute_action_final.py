@@ -9,12 +9,12 @@ from scipy.special import ellipk
 
 import functions as fn
 
-xy_data = np.load(f"action_angle/last_a0.025-0.050_nu0.90-0.80.npz")
+xy_data = np.load(f"action_angle/last_a0.025-0.050_nu0.90-0.80_5000.npz")
 tunes_data = np.load(f"../phasespace_code/tune_analysis/tunes_results.npz")
-integrator_data = np.load("integrator/evolved_qp_last.npz")
+integrator_data = np.load("integrator/evolved_qp_last_5000.npz")
 
 psi = integrator_data['psi']
-t = integrator_data['t']
+#t = integrator_data['t']
 
 x = xy_data['x']
 y = xy_data['y']
@@ -68,6 +68,8 @@ extra_steps = 100000
 
 #%%
 
+t = par.t
+
 q_traj = np.empty((extra_steps, len(q_init)))
 p_traj = np.empty((extra_steps, len(p_init)))
 step_count = 0
@@ -112,10 +114,10 @@ for j in tqdm(range(n_particles)):
 x = np.array(x)
 y = np.array(y)
 
-output_dir = "tune_stuff"
-if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-np.savez("./tune_stuff/island_particles.npz", x=x, y=y)
+#output_dir = "tune_stuff"
+#if not os.path.exists(output_dir):
+#        os.makedirs(output_dir)
+#np.savez("./tune_stuff/island_particles.npz", x=x, y=y)
 
 #%%
 

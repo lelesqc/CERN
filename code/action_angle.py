@@ -19,7 +19,7 @@ def run_action_angle(poincare_mode, n_particles):
 
         x = np.zeros((n_steps, n_particles))
         y = np.zeros((n_steps, n_particles))
-        
+
         for j in tqdm(range(n_particles)):
             for i in range(n_steps):
                 h_0 = fn.H0_for_action_angle(q[i, j], p[i, j])

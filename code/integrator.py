@@ -18,17 +18,19 @@ def run_integrator(poincare_mode, n_particles):
     p_single = None
 
     if poincare_mode == "none":
-        q_all = np.empty((par.n_steps + 1, *q.shape))
-        p_all = np.empty((par.n_steps + 1, *p.shape))
-        q_all[0] = np.copy(q)
-        p_all[0] = np.copy(p)
+        q_all = np.empty((par.n_steps // 7, n_particles))
+        p_all = np.empty((par.n_steps // 7, n_particles))
+        print(par.n_steps // 7)
+        q_all[0, :] = np.copy(q)
+        p_all[0, :] = np.copy(p)
 
     if poincare_mode == "all":
-        q_sec = np.empty((par.n_steps, *q.shape))
-        p_sec = np.empty((par.n_steps, *p.shape))
+        q_sec = np.empty((par.n_steps, n_particles))
+        p_sec = np.empty((par.n_steps, n_particles))
         sec_count = 0
 
     step = 0
+    par.t = 0
     psi = par.phi_0
     find_poincare = False
     fixed_params = False
@@ -41,8 +43,10 @@ def run_integrator(poincare_mode, n_particles):
 
         if poincare_mode == "none":
             if step < q_all.shape[0]:  
-                q_all[step] = np.copy(q)
-                p_all[step] = np.copy(p)
+                q_all[step+1, :] = np.copy(q)
+                p_all[step+1, :] = np.copy(p)
+                if par.t >= par.T_percent:
+                    break
             if par.t >= par.T_tot:
                 find_poincare = True
                 psi_val = psi
@@ -85,14 +89,17 @@ def run_integrator(poincare_mode, n_particles):
         q = q_sec[:sec_count]
         p = p_sec[:sec_count]
     elif poincare_mode == "none":
-        q = np.array(q_all)
-        p = np.array(p_all)
+        q = np.array(q_all[:step])
+        p = np.array(p_all[:step])
+        print(step)
     else:
         q = q_single
         p = p_single
 
     q = np.array(q)
     p = np.array(p)
+
+    psi_val = psi
 
     return q, p, psi_val
 
