@@ -1,3 +1,5 @@
+#%%
+
 import os
 import numpy as np
 from tqdm import tqdm
@@ -31,7 +33,11 @@ psi = 0
 angles = np.zeros((par.n_steps // 7, n_particles), dtype=np.float16)
 angles[0, :] = np.arctan2(p, q - np.pi)
 
+#%%
+
 # ------ Integratore -------
+
+par.t = 0
 
 step = 0
 while par.t < par.T_percent: 
@@ -79,6 +85,8 @@ for i in tqdm(range(n_particles)):
     q_loops.append(particle_q_loops)
     p_loops.append(particle_p_loops)
 
+#%%
+
 # ------ Funzione da parallelizzare -------
 def compute_xy_and_action(q_loop, p_loop):
     n_steps = len(q_loop)
@@ -104,12 +112,7 @@ def compute_xy_and_action(q_loop, p_loop):
     return x, y, action_final
 
 # ------ Parallelizzazione -------
-input_list = [
-    (np.array(q_loop), np.array(p_loop))
-    for particle_q_loops, particle_p_loops in zip(q_loops, p_loops)
-    for q_loop, p_loop in zip(particle_q_loops, particle_p_loops)
-]
-
+input_list = []
 particle_indices = []
 
 for particle_idx, (particle_q_loops, particle_p_loops) in enumerate(zip(q_loops, p_loops)):
@@ -125,13 +128,22 @@ with tqdm_joblib(tqdm(desc="Calcolo azioni", total=len(input_list))) as progress
         for q_loop, p_loop in input_list
     )
 
+#%%
+
 # ------ Ricostruzione risultati -------
 x_list = [res[0] for res in results]
 y_list = [res[1] for res in results]
 init_actions = np.array([res[2] for res in results])
 
-os.makedirs("actions_stuff")
 np.savez("./actions_stuff/actions_first_part.npz", init_actions=init_actions, particle_indices=particle_indices)
 
-print(f"Initial actions: {init_actions}")
+print(particle_indices.shape, init_actions.shape)
+idx_particle = 2350
+actions_idx = init_actions[particle_indices == idx_particle]
 
+print(actions_idx.shape)
+plt.scatter(np.arange(len(actions_idx)), actions_idx, s=1)
+plt.show()
+
+
+# %%
