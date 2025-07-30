@@ -10,64 +10,77 @@ import params as par
 import functions as fn
 import action_angle as aa
 
-# ------ Inizializzazione -------
 starting_data = np.load("init_conditions/init_distribution.npz")
 q_init = starting_data['q']
 p_init = starting_data['p']
 
-q_init_particle = q_init
-p_init_particle = p_init
-
-q = np.copy(q_init_particle)
-p = np.copy(p_init_particle)
+q = np.copy(q_init)
+p = np.copy(p_init)
 
 psi = 0
-
-# ------ Integratore -------
 par.t = 0
 
-q_loops_all = []
-p_loops_all = []
+n_particles = len(q_init)
 
-n_sections = 10
+q_sec = np.zeros((par.n_steps, n_particles))
+p_sec = np.zeros((par.n_steps, n_particles))
+sec_count = 0
 
-steps_section = 500
+times = []
+psi_vals = []
 
-for idx in tqdm(range(len(q_init))):
-    q = np.copy(q_init[idx])
-    p = np.copy(p_init[idx])
-    psi = 0
-    par.t = 0
+while par.t < par.T_tot: 
+    q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq)
 
-    q_loops = []
-    p_loops = []
+    if np.cos(psi) > 1.0 - 1e-3:              
+        q_sec[sec_count] = q
+        p_sec[sec_count] = p
+        times.append(par.t)
+        psi_vals.append(psi)
+        sec_count += 1
 
-    section = 0
+    psi += par.omega_lambda(par.t) * par.dt
+    par.t += par.dt
 
-    while par.t < par.T_percent: 
-        closed = False   
-        q_loop = [q]
-        p_loop = [p]
-        steps = 0
-        delta_angle = 0
-        angle_0 = np.arctan2(p, q - np.pi)
-        angle_prev = angle_0
+q = q_sec[:sec_count]
+p = p_sec[:sec_count]
 
-        for i in range(steps_section):
-            q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq)
-            
-            if np.cos(psi) > 1.0 - 1e-3:              
-                q_sec[sec_count] = q
-                p_sec[sec_count] = p
-                sec_count += 1
+np.savez("actions_stuff/particle_data_phasespace.npz", q=q, p=p, times=times, psi_vals=psi_vals) 
 
-        psi += par.omega_lambda(par.t) * par.dt
-        par.t += par.dt
 
-    q_loops_all.append(q_loops)
-    p_loops_all.append(p_loops)
+#%%
 
-print("finito")
+import numpy as np
+import params as par
+import functions as fn
+from tqdm import tqdm
+
+data = np.load("actions_stuff/particle_data.npz")
+q = data['q']
+p = data['p']
+times = data['times']
+psi_vals = data['psi_vals']
+
+poincare_points = 250
+
+inner_traj_q = np.zeros((n_particles, len(q), poincare_points))    # i-th particle, j-th ext step, k-th int step
+inner_traj_p = np.zeros((n_particles, len(p), poincare_points))
+
+psi_tracker = psi_vals
+
+for i in tqdm(range(n_particles)):
+    for j in tqdm(range(len(q))):
+        q_temp = q[j]
+        p_temp = p[j]
+        psi_temp = psi_tracker[j]
+        for k in range(par.n_steps):
+            q_temp, p_temp = fn.integrator_step(q_temp, p_temp, psi_temp, times[j], par.dt, fn.Delta_q, fn.dV_dq)
+            if np.cos(psi_temp) > 1.0 - 1e-3:
+                inner_traj_q[i, j, k] = q_temp
+                inner_traj_p[i, j, k] = p_temp
+            psi_temp += par.omega_lambda(times[j]) * par.dt
+
+
 
     
 #%%

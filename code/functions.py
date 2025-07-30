@@ -97,3 +97,13 @@ def pts_in_section(points, x_c, y_c, x_A, y_A, R=None):
         mask = angle_mask
 
     return points[mask]
+
+def birkhoff_average(phase_advances, n=1):
+    N = len(phase_advances)
+    k = np.arange(1, N)
+    t = k/N
+    weights = np.exp(-1/(t**n * (1-t)**n))
+    weights[t <= 0] = 0
+    weights[t >= 1] = 0
+    norm = np.sum(weights)
+    return np.sum(weights * phase_advances[1:]) / norm
