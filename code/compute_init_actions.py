@@ -138,6 +138,9 @@ for j in tqdm(range(len(q_loops))):
 
 #%%
 
+q_loops = [list(col[col != 0]) for col in inner_traj_q.T]
+p_loops = [list(col[col != 0]) for col in inner_traj_p.T]
+
 tunes_loops = []
 
 for idx_loop in range(len(q_loops)):
@@ -154,18 +157,24 @@ for idx_loop in range(len(q_loops)):
 
 print(tunes_loops)
 
-plt.scatter(q_loops[20], p_loops[20], s=1, label="Particle Trajectory")
-plt.show()
-
 
 # %%
 
-#np.savez("actions_stuff/actions_particle_island.npz", actions=actions, hulls=hulls)
+data = np.load("actions_stuff/actions_particle_island.npz", allow_pickle=True)
+actionz = data['actions']
+hulls = data['hulls']
+#tunes_loops = data['tunes']
 
+np.savez(f"actions_stuff/actions_particle_island_{par.N_turn}.npz", actions=actionz, hulls=hulls, tunes=tunes_loops)
+
+print(len(actionz), len(times), len(tunes_loops))
+
+sc = plt.scatter(times, actionz, c=tunes_loops, s=1, cmap='viridis')
 plt.scatter(times, actions, s=1)
 plt.xlabel("Time (s)")
 plt.ylabel("Action")
-plt.title(f"Actions for Particle with Tune = 0.8")
+plt.title("Actions for Particle colored by Tune")
+plt.colorbar(sc, label="Tune")
 plt.show()
 
 """
