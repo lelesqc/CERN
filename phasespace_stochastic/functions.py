@@ -23,14 +23,14 @@ def compute_action_angle(kappa_squared, P):
     return action, theta
     
 def dV_dq(q):  
-    return par.omega_s * np.sqrt(par.e * par.V / (2*np.pi * par.E_s * par.beta**2 * par.eta)) * np.sin(q) 
+    return par.A**2 * np.sin(q) 
 
 def Delta_q(p, psi, t, dt):
     #print(f"{t:.3f}, {np.cos(psi)}, {par.a_lambda(t):.5f}, {par.omega_lambda(t)/par.omega_s:.5f}")
     return par.lambd**2 * p * dt + par.a * par.omega_m * np.cos(psi) * dt
 
 def hamiltonian(q, p):
-    H0 = 0.5 * par.lambd**2 * p**2 + (par.omega_rev * par.e * par.V / (2 * np.pi * par.E_s * par.beta**2)) * np.cos(q)    
+    H0 = 0.5 * par.lambd**2 * p**2 + par.A**2 * np.cos(q)    
     H1 = par.a * par.omega_m * np.cos(par.omega_m * par.t + par.phi_0) * p
     
     return H0 + H1
@@ -56,7 +56,7 @@ def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq):
     q += Delta_q(p, psi, t, dt/2)
     q = np.mod(q, 2 * np.pi)        
     t_mid = t + dt/2
-    p += dt * dV_dq(q) - dt * 2 * par.damp_rate * q / par.beta**2 + np.sqrt(dt) * noise_D * np.random.normal(size=p.shape) 
+    p += dt * dV_dq(q) - dt * 2 * par.damp_rate * p / par.beta**2 + np.sqrt(dt) * noise_D * np.random.normal(size=p.shape) 
     q += Delta_q(p, psi, t_mid, dt/2)
     q = np.mod(q, 2 * np.pi)
 

@@ -1,6 +1,7 @@
 import os
 import sys
 import numpy as np
+from tqdm import tqdm
 
 import params as par
 import functions as fn
@@ -29,7 +30,7 @@ def run_integrator(mode):
 
     psi = par.phi_0
 
-    for step in range(par.n_steps):
+    while sec_count < par.n_steps:
         q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq)
 
         if mode == "tune":
@@ -53,8 +54,8 @@ def run_integrator(mode):
         p = p_traj
 
     elif mode == "phasespace":
-        #q = q_sec[:sec_count]
-        #p = p_sec[:sec_count]
+        #q = q_sec
+        #p = p_sec
         q = q_last
         p = p_last
 

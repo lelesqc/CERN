@@ -33,25 +33,29 @@ def plot(mode):
 
         #tunes_list = tune_analysis['tunes_list']
 
-        x = data['x']
-        y = data['y']
+        #x = data['x']
+        #y = data['y']
 
         #print(tunes_list.size)
         energies = np.array([fn.hamiltonian(q[i], p[i]) for i in range(len(q))])
+        E0 = np.min(energies)
+        T_eff = np.mean(energies - E0)
+        P_H = np.exp(-(energies - E0) / T_eff)
 
-        T_eff = (par.h * par.eta)**2 * par.omega_rev * par.Cq * par.gamma**2 / (2 * par.radius)
-        P_H = np.exp(-energies / T_eff)
-        P_H /= np.trapz(P_H, energies)
+        idx = np.argsort(energies)
+        energies_sorted = energies[idx]
+        P_H_sorted = P_H[idx]
 
-        plt.hist(energies, bins=50, density=True, alpha=0.6, label="Simulazione")
+        P_H_sorted /= np.trapz(P_H_sorted, energies_sorted)
+
+        plt.hist(energies, bins=75, density=True, alpha=0.5, label="Simulazione")
         plt.xlabel("Energies", fontsize=20)
         plt.ylabel("Probability Density", fontsize=20)
-        plt.plot(energies, P_H, 'r-', lw=2, label="Teorica $e^{-E/T_{eff}}$")
-
+        plt.plot(energies_sorted, P_H_sorted, 'r-', lw=2, label="Teorica $e^{-(E-E_0)/T_{eff}}$")
         plt.show()
 
 
-        plt.figure(figsize=(7,7))
+        """plt.figure(figsize=(7,7))
         plt.scatter(x, y, s=3, c='blue', alpha=1.0, label="Phase Space")
         #scatter = plt.scatter(x, y, s=3, c=tunes_list, cmap='viridis', alpha=1.0)
         #plt.colorbar(scatter, label='Tune')
@@ -62,7 +66,7 @@ def plot(mode):
         #plt.title("Phase Space colored by Tune", fontsize=18)
         plt.tick_params(labelsize=18)
         plt.tight_layout()
-        plt.show()
+        plt.show()"""
 
     if mode == "tune":
         data = np.load("tune_analysis/fft_results.npz")

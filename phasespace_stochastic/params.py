@@ -6,23 +6,27 @@ import yaml
 h = 328
 eta = 1.26e-3
 nu_s = 0.0075
-omega_rev = 9_571_303.971
-omega_s = 71784.77978
+T_rev = 0.66e-6
+omega_rev = 9.52e6
 V = 1.5e6
 E_s = 1.5e9
-radius = 31.3
+radius = 4.01
+U_0 = 0.11e6
+omega_rev = 2 * np.pi / T_rev
 
 # -------------- model -----------------
 
-damp_rate = 9.6911
+damp_rate = 113.64
 beta = 1.0
 gamma = 2935.42
 D = 1.82e-3
 N = 100    # fixed
-N_turn = 2000
+N_turn = 100
 phi_0 = 0.0
 e = 1
 lambd = np.sqrt(h * eta * omega_rev)
+
+omega_s = omega_rev * np.sqrt(e * h * V * eta / (2 * np.pi * E_s * beta**2))
 A = omega_s / lambd
 Cq = 3.83 * 10e-13
 
