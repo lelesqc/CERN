@@ -6,8 +6,7 @@ import yaml
 h = 328
 eta = 1.26e-3
 nu_s = 0.0075
-omega_rev = 9_571_303.971
-omega_s = 71784.77978
+omega_rev = 9.52e6
 V = 1.5e6
 E_s = 1.5e9
 
@@ -16,11 +15,13 @@ E_s = 1.5e9
 damp_rate = 38.1
 beta = 1.0
 D = 1.82e-3
-N = 100    # fixed
-N_turn = 500
+N = 50    # fixed
+N_turn = 1000
 phi_0 = 0.0
 e = 1
 lambd = np.sqrt(h * eta * omega_rev)
+
+omega_s = omega_rev * np.sqrt(e * h * V * eta / (2 * np.pi * E_s * beta**2))
 A = omega_s / lambd
 
 # -------------- YAML ------------------

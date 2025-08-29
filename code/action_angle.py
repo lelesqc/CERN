@@ -6,8 +6,12 @@ from tqdm.auto import tqdm
 import params as par
 import functions as fn
 
+base_dir = os.environ["BASE_DIR"]
+
 def run_action_angle(poincare_mode, n_particles):
-    data = np.load(f"integrator/evolved_qp_{poincare_mode}_{n_particles}.npz")
+    base_dir = os.environ["BASE_DIR"]
+
+    data = np.load(base_dir + f"/integrator/evolved_qp_{poincare_mode}_{n_particles}.npz")
 
     q = data['q']
     p = data['p']
@@ -87,7 +91,7 @@ if __name__ == "__main__":
 
     str_title = f"a{a_start_str}-{a_end_str}_nu{float(omega_start_str)/par.omega_s:.2f}-{float(omega_end_str)/par.omega_s:.2f}"
 
-    output_dir = "action_angle"
+    output_dir = base_dir + "/action_angle"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 

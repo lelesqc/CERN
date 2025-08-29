@@ -1,12 +1,19 @@
 import os
 import sys
 import numpy as np
+import matplotlib.pyplot as plt
 
 import params as par
 import functions as fn
 
+base_dir = os.environ["BASE_DIR"]
+
 def run_integrator(poincare_mode, n_particles):
-    data = np.load("init_conditions/init_distribution.npz")
+    """
+    Run the symplectic integrator to evolve the system.
+
+    """
+    data = np.load(base_dir + "/init_conditions/init_distribution.npz")
 
     q_init = data['q']
     p_init = data['p']
@@ -20,7 +27,6 @@ def run_integrator(poincare_mode, n_particles):
     if poincare_mode == "none":
         q_all = np.empty((par.n_steps // 7, n_particles))
         p_all = np.empty((par.n_steps // 7, n_particles))
-        print(par.n_steps // 7)
         q_all[0, :] = np.copy(q)
         p_all[0, :] = np.copy(p)
 
@@ -91,7 +97,6 @@ def run_integrator(poincare_mode, n_particles):
     elif poincare_mode == "none":
         q = np.array(q_all[:step])
         p = np.array(p_all[:step])
-        print(step)
     else:
         q = q_single
         p = p_single
@@ -113,7 +118,7 @@ if __name__ == "__main__":
     
     q, p, psi_val = run_integrator(poincare_mode, n_particles)
 
-    output_dir = "integrator"
+    output_dir = base_dir + "/integrator"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 

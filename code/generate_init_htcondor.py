@@ -1,22 +1,22 @@
-import os
-import sys
-import random
 import numpy as np
-import matplotlib.pyplot as plt
+import random
 from scipy.special import ellipk
-
-import params as par
 import functions as fn
+import params as par
+import yaml
+import os
+from tqdm import tqdm
 
-base_dir = os.environ["BASE_DIR"]
-
-random.seed(42)
-
-def generate_init(radius, n_particles):
+def generate_init(radius, n_particles, seed):
     """
-    Generate circular initial conditions in (q, p) space starting from (X, Y) coordinates.
+    Generate circular initial conditions in (q, p) space starting from (X, Y) coordinates,
+    using a specified random seed for reproducibility.
 
     """
+
+    if seed is not None:
+        np.random.seed(seed)
+        random.seed(seed)
 
     X_list = np.empty(n_particles)
     Y_list = np.empty(n_particles)
@@ -28,11 +28,9 @@ def generate_init(radius, n_particles):
     P_list = np.empty(n_particles)
 
     count = 0
-
     while count < n_particles:
         X = random.uniform(-radius, radius)
         Y = random.uniform(-radius, radius)
-
         if X**2 + Y**2 <= radius**2:
             X_list[count] = X
             Y_list[count] = Y
@@ -59,17 +57,18 @@ def generate_init(radius, n_particles):
     return q_init, p_init
 
 
-# ----------------------------------------
-
-
 if __name__ == "__main__":
-    radius = float(sys.argv[1])
-    n_particles = int(sys.argv[2])
-    q_init, p_init = generate_init(radius, n_particles)
+    with open("params.yaml", "r") as f:
+        params = yaml.safe_load(f)
 
-    output_dir = base_dir + "/init_conditions"
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    radius = float(params["radius"])
+    n_particles = int(params["particles"])
+    seed = int(params["seed"])
 
-    file_path = os.path.join(output_dir, "init_distribution.npz")
-    np.savez(file_path, q=q_init, p=p_init)
+    output_dir = "init_htcondor"
+    os.makedirs(output_dir, exist_ok=True)
+
+    q_init, p_init = generate_init(radius, n_particles, seed)
+    outname = f"init_distribution_{seed}.npz"
+    file_path = os.path.join(output_dir, outname)
+    np.savez(file_path, q=q_init, p=p_init, seed=seed)

@@ -59,6 +59,15 @@ def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq):
 
     return q, p
 
+def integrator_step_fixed(q, p, psi, a, omega_m, dt, Delta_q_fixed, dV_dq):
+    q += Delta_q_fixed(p, psi, a, omega_m, dt/2)
+    q = np.mod(q, 2 * np.pi)        
+    p += dt * dV_dq(q)
+    q += Delta_q_fixed(p, psi, a, omega_m, dt/2)
+    q = np.mod(q, 2 * np.pi)
+
+    return q, p
+
 def find_h0_numerical(I_target):
     def G_objective(h0_val):
         m = 0.5 * (1 + h0_val / par.A**2)
@@ -107,3 +116,18 @@ def birkhoff_average(phase_advances, n=1):
     weights[t >= 1] = 0
     norm = np.sum(weights)
     return np.sum(weights * phase_advances[1:]) / norm
+
+def avg_phase_adv_runtime(prev_angle_unwrapped, current_angle, prev_tune, count):
+    # Calcolo incremento angolare con unwrapping
+    delta_raw = current_angle - (prev_angle_unwrapped % (2*np.pi))
+    delta_angle = np.angle(np.exp(1j*delta_raw))  # differenza "continua" ∈ (-π, π)
+    current_angle_unwrapped = prev_angle_unwrapped + delta_angle
+
+    # Conversione in unità di tune
+    delta_tune = delta_angle / (2*np.pi) * par.N
+
+    # Aggiorna media ricorsiva
+    new_tune = prev_tune + (delta_tune - prev_tune) / (count + 1)
+    new_count = count + 1
+
+    return new_tune, new_count, current_angle_unwrapped

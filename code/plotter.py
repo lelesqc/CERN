@@ -1,8 +1,11 @@
+import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
 import params as par
+
+base_dir = os.environ["BASE_DIR"]
 
 def plot(poincare_mode, n_particles, n_to_plot):
     a_start = par.a_lambda(par.T_percent)
@@ -17,7 +20,7 @@ def plot(poincare_mode, n_particles, n_to_plot):
 
     str_title = f"a{a_start_str}-{a_end_str}_nu{float(omega_start_str)/par.omega_s:.2f}-{float(omega_end_str)/par.omega_s:.2f}_{n_particles}"
 
-    data = np.load(f"action_angle/{poincare_mode}_{str_title}.npz")
+    data = np.load(base_dir + f"/action_angle/{poincare_mode}_{str_title}.npz")
 
     x = data['x']
     y = data['y']

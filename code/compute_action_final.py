@@ -2,25 +2,27 @@
 
 import os
 import numpy as np
-import params as par
 import matplotlib.pyplot as plt
+
 from tqdm.auto import tqdm
 from scipy.special import ellipk
 
+import params as par
 import functions as fn
 
-xy_data = np.load(f"action_angle/last_a0.025-0.050_nu0.90-0.80_5000.npz")
-tunes_data = np.load(f"../phasespace_code/tune_analysis/tunes_results.npz")
-integrator_data = np.load("integrator/evolved_qp_last_5000.npz")
+base_dir = os.environ["BASE_DIR"]
+
+xy_data = np.load(base_dir + f"/action_angle/last_a0.025-0.050_nu0.90-0.80_5000.npz")
+tunes_data = np.load(base_dir + f"/../phasespace_code/tune_analysis/tunes_results.npz")
+integrator_data = np.load(base_dir + "/integrator/evolved_qp_last_5000.npz")
 
 psi = integrator_data['psi']
-#t = integrator_data['t']
+
+# ---------- initial conditions ----------
 
 x = xy_data['x']
 y = xy_data['y']
 #tunes_list = tunes_data['tunes_list']
-
-#print(x.shape, tunes_list.shape)
 
 mask = (x**2 + y**2 > 2)
 #tunes_list = tunes_list[mask]
@@ -64,7 +66,10 @@ p = p_init.copy()
 
 a = 0.05
 omega_m = 0.8 * par.omega_s
-extra_steps = 100000
+extra_steps = 10000
+
+
+# ---------- integrator -----------
 
 #%%
 
@@ -93,6 +98,9 @@ q = q_traj[:step_count]
 p = p_traj[:step_count]
 n_particles = len(q_init)
 
+
+# --------- action-angle -----------
+
 #%%
 
 x = np.zeros((len(q), n_particles))
@@ -118,6 +126,9 @@ y = np.array(y)
 #if not os.path.exists(output_dir):
 #        os.makedirs(output_dir)
 #np.savez("./tune_stuff/island_particles.npz", x=x, y=y)
+
+
+# ---------- save and plot -----------
 
 #%%
 
