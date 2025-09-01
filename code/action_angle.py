@@ -53,13 +53,15 @@ def run_action_angle(poincare_mode, n_particles):
             kappa_squared = 0.5 * (1 + h_0 / (par.A**2))
 
             if 0 < kappa_squared < 1:
-                Q = (q[i] + np.pi) / par.lambd
+                #Q = (q[i] + np.pi) / par.lambd
                 P = par.lambd * p[i]
 
                 action, theta = fn.compute_action_angle(kappa_squared, P)
                 actions_list.append(action)
                 theta_list.append(theta)
                 sign_list.append(np.sign(q[i]-np.pi))
+            elif kappa_squared > 1:
+                print(kappa_squared)
 
         actions_list = np.array(actions_list)
         theta_list = np.array(theta_list)

@@ -26,14 +26,36 @@ def plot(poincare_mode, n_particles, n_to_plot):
     y = data['y']
 
     if poincare_mode in ["first", "last"]:
+        #tune_data = np.load("../phasespace_code/tune_analysis/tunes_results.npz")
+        #tunes = tune_data["tunes_list"]
+
+        tunes_data = np.load(base_dir + "/integrator/evolved_qp_last_10000.npz")
+
+        tunes = tunes_data["tunes"]
+
+        print(tunes[:50])
+
+        mask = (tunes > (0.8 - 10e-3)) & (tunes < (0.8 + 10e-3)) & ((x+1)**2 + y**2 > 40)
+
+        tunes_island = tunes[mask]
+        n_trapped = len(tunes_island)
+
+        print(f"Trapping probability: {n_trapped/x.shape[0] * 100:.1f} %")
+
+        #mask2 = tunes > 0.75
+        #x = x[mask2]
+        #y = y[mask2]
+        #tunes = tunes[mask2]
+
         plt.figure(figsize=(7,7))
-        plt.scatter(x, y, s=3, label=r"Final distribution", alpha=1.0)
+        sc = plt.scatter(x[mask], y[mask], c=tunes_island, cmap="viridis", s=4, label=r"Final distribution", alpha=1.0)
         plt.xlabel("X", fontsize=20)
         plt.ylabel("Y", fontsize=16)
         plt.xlim(-15, 15)
         plt.ylim(-15, 15)
         plt.legend(fontsize=20)
         plt.tick_params(labelsize=18)
+        plt.colorbar(sc, label="Tune")
         plt.tight_layout()
         plt.show()
 

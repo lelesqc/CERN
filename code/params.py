@@ -59,7 +59,6 @@ percent = 0.1
 T_tot = n_steps * dt
 T_percent = percent * T_tot
 
-
 omega_lambda = lambda t: (
     omega_m_i if t <= T_percent
     else omega_m_i + (Delta_omega) * ((t - T_percent) / (T_tot - T_percent))

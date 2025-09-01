@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 def main_script(radius, n_particles, seed):
     base_dir = os.environ.get("BASE_DIR", "/mnt/c/Users/emanu/OneDrive - Alma Mater Studiorum Università di Bologna/CERN_data/code")
 
-    """
     q, p = gen_init.generate_init(radius, n_particles, seed)
 
     psi = 0
@@ -99,7 +98,6 @@ def main_script(radius, n_particles, seed):
 
     #print(q.shape)
 
-    """
     data_coord = np.load(base_dir + "/integrator/phasespaces_qp.npz")
     data_tune = np.load(base_dir + "/integrator/tunes_phasespaces.npz")
 
