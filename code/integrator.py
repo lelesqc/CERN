@@ -133,7 +133,6 @@ def run_integrator(poincare_mode, n_particles):
 
             tunes = tune_curr
 
-    print(par.omega_lambda(par.t))
     q = np.array(q)
     p = np.array(p)
 

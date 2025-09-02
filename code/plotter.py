@@ -8,17 +8,14 @@ import params as par
 base_dir = os.environ["BASE_DIR"]
 
 def plot(poincare_mode, n_particles, n_to_plot):
-    a_start = par.a_lambda(par.T_percent)
-    omega_start = par.omega_lambda(par.T_percent)
-    a_end = par.a_lambda(par.T_tot)
-    omega_end = par.omega_lambda(par.T_tot)
+    a_start = f"{par.a_lambda(par.T_percent):.3f}"
+    omega_start = f"{par.omega_lambda(par.T_percent):.2f}"
+    a_end = f"{par.a_lambda(par.T_tot):.3f}"
+    omega_end = f"{par.omega_lambda(par.T_tot):.2f}"
 
-    a_start_str = f"{a_start:.3f}"
-    omega_start_str = f"{omega_start:.2f}"
-    a_end_str = f"{a_end:.3f}"
-    omega_end_str = f"{omega_end:.2f}"
+    nu_f = par.omega_lambda(par.T_tot)/par.omega_s
 
-    str_title = f"a{a_start_str}-{a_end_str}_nu{float(omega_start_str)/par.omega_s:.2f}-{float(omega_end_str)/par.omega_s:.2f}_{n_particles}"
+    str_title = f"a{a_start}-{a_end}_nu{float(omega_start)/par.omega_s:.2f}-{float(omega_end)/par.omega_s:.2f}_{n_particles}"
 
     data = np.load(base_dir + f"/action_angle/{poincare_mode}_{str_title}.npz")
 
@@ -26,37 +23,56 @@ def plot(poincare_mode, n_particles, n_to_plot):
     y = data['y']
 
     if poincare_mode in ["first", "last"]:
-        #tune_data = np.load("../phasespace_code/tune_analysis/tunes_results.npz")
-        #tunes = tune_data["tunes_list"]
-
         tunes_data = np.load(base_dir + "/integrator/evolved_qp_last_10000.npz")
-
         tunes = tunes_data["tunes"]
 
-        print(tunes[:50])
-
-        mask = (tunes > (0.8 - 10e-3)) & (tunes < (0.8 + 10e-3)) & ((x+1)**2 + y**2 > 40)
+        mask = (tunes > (nu_f - 10e-3)) & (tunes < (nu_f + 10e-3))
 
         tunes_island = tunes[mask]
         n_trapped = len(tunes_island)
 
-        print(f"Trapping probability: {n_trapped/x.shape[0] * 100:.1f} %")
+        x_in, y_in = x[mask], y[mask]
+        x_out, y_out = x[~mask], y[~mask]
 
-        #mask2 = tunes > 0.75
-        #x = x[mask2]
-        #y = y[mask2]
-        #tunes = tunes[mask2]
+        stats = {
+            "mean_x_in": np.mean(x_in),
+            "mean_y_in": np.mean(y_in),
+            "var_x_in": np.var(x_in),
+            "var_y_in": np.var(y_in),
+
+            "mean_x_out": np.mean(x_out),
+            "mean_y_out": np.mean(y_out),
+            "var_x_out": np.var(x_out),
+            "var_y_out": np.var(y_out),
+
+            "trapping_prob": n_trapped / x.shape[0] * 100
+        }
+
+        print(f"Trapping probability: {stats["trapping_prob"]:.1f} %")
+
+        results_dir = base_dir + "/trapping/trapping_data"
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
+
+        #np.savez(results_dir + f"/results_{str_title}.npz", **stats)
 
         plt.figure(figsize=(7,7))
-        sc = plt.scatter(x[mask], y[mask], c=tunes_island, cmap="viridis", s=4, label=r"Final distribution", alpha=1.0)
+        sc = plt.scatter(x, y, c=tunes, cmap="viridis", s=4, alpha=1.0)
         plt.xlabel("X", fontsize=20)
         plt.ylabel("Y", fontsize=16)
         plt.xlim(-15, 15)
         plt.ylim(-15, 15)
-        plt.legend(fontsize=20)
         plt.tick_params(labelsize=18)
         plt.colorbar(sc, label="Tune")
+        plt.title(f"Trapping probability: {stats["trapping_prob"]:.1f}%")
         plt.tight_layout()
+
+        output_dir = base_dir + "/trapping" + "/trapping_pics"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        
+        #plt.savefig(output_dir + "/" + str_title + ".png")
+
         plt.show()
 
     elif poincare_mode == "all":
