@@ -3,21 +3,24 @@
 import os
 import numpy as np
 from tqdm import tqdm
-#from tqdm_joblib import tqdm_joblib
 import matplotlib.pyplot as plt
-from joblib import Parallel, delayed
 
 import params as par
 import functions as fn
-import action_angle as aa
 
+import alphashape
 
-starting_data = np.load("init_conditions/init_distribution.npz")
+import sys
+
+os.environ["BASE_DIR"] = "/mnt/c/Users/emanu/OneDrive - Alma Mater Studiorum Università di Bologna/CERN_data/code"
+base_dir = os.environ["BASE_DIR"]
+
+starting_data = np.load(base_dir + "/init_conditions/init_distribution.npz")
 q_init = starting_data['q']
 p_init = starting_data['p']
 
-idx = 42   #island
-#idx = 59 #center
+idx = 42    #island
+idx = 100    #center
 
 q_init_particle = q_init[idx]
 p_init_particle = p_init[idx]
@@ -51,38 +54,32 @@ while par.t < par.T_tot:
 q = q_sec[:sec_count]
 p = p_sec[:sec_count]
 
-np.savez("actions_stuff/particle_data.npz", q=q, p=p, times=times, psi_vals=psi_vals)    
+np.savez(base_dir + "/actions_stuff/particle_data.npz", q=q, p=p, times=times, psi_vals=psi_vals)    
+
 
 #%%
-
-import numpy as np
-import params as par
-import functions as fn
-import matplotlib.pyplot as plt
-import alphashape
-from shapely.geometry import Polygon
-from tqdm import tqdm
-
-data = np.load("actions_stuff/particle_data.npz")
-q = data['q']
-p = data['p']
-times = data['times']
-psi_vals = data['psi_vals']
 
 inner_traj_q = np.zeros((par.n_steps, len(q)))
 inner_traj_p = np.zeros((par.n_steps, len(p)))
 
 psi_tracker = psi_vals
 
+extra_steps = 1000
+
 for i in tqdm(range(len(q))):
     q_temp = q[i]
     p_temp = p[i]
     psi_temp = psi_tracker[i]
-    for j in range(par.n_steps):
+
+    j = 0
+    while j < extra_steps:
         q_temp, p_temp = fn.integrator_step(q_temp, p_temp, psi_temp, times[i], par.dt, fn.Delta_q, fn.dV_dq)
-        #if np.cos(psi_temp) > 1.0 - 1e-3:
-        inner_traj_q[j, i] = q_temp
-        inner_traj_p[j, i] = p_temp
+
+        if np.cos(psi_temp) > 1.0 - 1e-3:
+            inner_traj_q[j, i] = q_temp
+            inner_traj_p[j, i] = p_temp
+            j += 1
+
         psi_temp += par.omega_lambda(times[i]) * par.dt
 
 #%%
@@ -90,7 +87,7 @@ for i in tqdm(range(len(q))):
 q_loops = [list(col[col != 0]) for col in inner_traj_q.T]
 p_loops = [list(col[col != 0]) for col in inner_traj_p.T]
 
-n_steps = [len(q_loop) for q_loop in q_loops]
+steps = [len(q_loop) for q_loop in q_loops]
 actions = []
 hulls = []
 
@@ -98,10 +95,10 @@ for j in tqdm(range(len(q_loops))):
     q_loop = q_loops[j]
     p_loop = p_loops[j]
 
-    x = np.zeros(n_steps[j])
-    y = np.zeros(n_steps[j])
+    x = np.zeros(steps[j])
+    y = np.zeros(steps[j])
 
-    for i in range(n_steps[j]):
+    for i in range(steps[j]):
         h_0 = fn.H0_for_action_angle(q_loop[i], p_loop[i])
         kappa_squared = 0.5 * (1 + h_0 / (par.A**2))
         if 0 < kappa_squared < 1:
@@ -116,11 +113,11 @@ for j in tqdm(range(len(q_loops))):
 
     xy = np.vstack((x_closed, y_closed)).T
 
-    alpha = 0.3
+    alpha = 0.2
     hull = alphashape.alphashape(xy, alpha)
     
     if hull.geom_type == "MultiPolygon":
-        alpha_low = 0.025  # Scegli tu il valore più basso
+        alpha_low = 0.025
         hull = alphashape.alphashape(xy, alpha_low)
 
     hulls.append(hull)
@@ -139,14 +136,13 @@ for j in tqdm(range(len(q_loops))):
 
 #%%
 
-q_loops = [list(col[col != 0]) for col in inner_traj_q.T]
-p_loops = [list(col[col != 0]) for col in inner_traj_p.T]
-
+"""
 tunes_loops = []
 
-for idx_loop in range(len(q_loops)):
+for idx_loop in tqdm(range(len(q_loops))):
     q_loop = np.array(q_loops[idx_loop])
     p_loop = np.array(p_loops[idx_loop])
+
     z = (q_loop - np.mean(q_loop)) - 1j * p_loop
     z_normalized = z / np.abs(z)
     angles = np.angle(z_normalized, deg=False)
@@ -155,27 +151,16 @@ for idx_loop in range(len(q_loops)):
     delta_angles = np.abs(delta_angles) / (2 * np.pi) * par.N
     tune = fn.birkhoff_average(delta_angles)
     tunes_loops.append(tune)
-
-print(tunes_loops)
-
-
+"""
+    
 # %%
 
-data = np.load("actions_stuff/actions_particle_island.npz", allow_pickle=True)
-actionz = data['actions']
-hulls = data['hulls']
-#tunes_loops = data['tunes']
-
-np.savez(f"actions_stuff/actions_particle_island_{par.N_turn}.npz", actions=actionz, hulls=hulls, tunes=tunes_loops)
-
-print(len(actionz), len(times), len(tunes_loops))
-
-sc = plt.scatter(times, actionz, c=tunes_loops, s=1, cmap='viridis')
+#sc = plt.scatter(times, actions, c=tunes_loops, s=1, cmap='viridis')
 plt.scatter(times, actions, s=1)
 plt.xlabel("Time (s)")
 plt.ylabel("Action")
 plt.title("Actions for Particle colored by Tune")
-plt.colorbar(sc, label="Tune")
+#plt.colorbar(sc, label="Tune")
 plt.show()
 
 """

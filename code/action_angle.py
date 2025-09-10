@@ -99,3 +99,5 @@ if __name__ == "__main__":
 
     file_path = os.path.join(output_dir, f"{poincare_mode}_{str_title}_{n_particles}.npz")
     np.savez(file_path, x=x, y=y, actions=actions_list)
+
+    print(f"Data saved in {file_path}")

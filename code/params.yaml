@@ -1,7 +1,7 @@
-epsilon_i: 0.03
-epsilon_f: 0.05
-nu_m_i: 2.1
-nu_m_f: 1.95
+epsilon_i: 0.0225
+epsilon_f: 0.04
+nu_m_i: 0.9
+nu_m_f: 0.8
 
 radius: 10
 particles: 500

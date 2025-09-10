@@ -12,7 +12,7 @@ import functions as fn
 
 base_dir = os.environ["BASE_DIR"]
 
-xy_data = np.load(base_dir + f"/action_angle/last_a0.025-0.050_nu0.90-0.80_5000.npz")
+xy_data = np.load(base_dir + f"/action_angle/last_a0.025-0.050_nu0.90-0.80_10000.npz")
 tunes_data = np.load(base_dir + f"/../phasespace_code/tune_analysis/tunes_results.npz")
 integrator_data = np.load(base_dir + "/integrator/evolved_qp_last_5000.npz")
 
@@ -66,7 +66,7 @@ p = p_init.copy()
 
 a = 0.05
 omega_m = 0.8 * par.omega_s
-extra_steps = 10000
+extra_steps = 4096
 
 
 # ---------- integrator -----------

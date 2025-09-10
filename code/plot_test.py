@@ -68,6 +68,24 @@ def plot_test():
     fig.suptitle(f"Trapping probability = {trapping_prob:.2f}%", fontsize=24)
     plt.show()
 
-if __name__ == "__main__":
-    plot_test()
+def load_results():
+    results_dir = "/mnt/c/Users/emanu/\"OneDrive - Alma Mater Studiorum Università di Bologna\"/CERN_data/code/trapping/trapping_data/"
+    trapping_probs = []
+    for root, _, files in os.walk(results_dir):
+        for file in files:
+            if file.endswith(".npz"):
+                data = np.load(os.path.join(root, file))
+                trapping_probs.append(float(data["trapping_prob"]))
 
+    forces = []
+    times = np.linspace(0, par.T_tot, int(round(par.T_tot / par.dt)))
+    for t in times:
+        forces.append(par.omega_lambda(t) * par.a_lambda(t))
+
+    plt.scatter(times, forces)
+    plt.show()
+
+
+if __name__ == "__main__":
+    #plot_test()
+    load_results()
