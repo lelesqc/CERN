@@ -22,11 +22,19 @@ def compute_action_angle(kappa_squared, P):
     theta = (Omega / par.A) * u
     return action, theta
     
-def dV_dq(q):  
+def dV_dq(q): 
     return par.A**2 * np.sin(q) 
 
 def Delta_q(p, psi, t, dt):
     #print(f"{t:.3f}, {np.cos(psi)}, {par.a_lambda(t):.5f}, {par.omega_lambda(t)/par.omega_s:.5f}")
+    val_q0 = par.damp_rate
+    val_dq = dt * 2 * par.damp_rate * p[0] / par.beta**2
+
+    if np.isnan(val_q0) or np.isnan(val_dq):
+        print("NaN detected! q[0]:", val_q0, "Delta_q[0]:", val_dq, )
+        import sys; sys.exit(1)  # Ferma l'esecuzione
+
+    #print(val_q0, val_dq)
     return par.lambd**2 * p * dt + par.a * par.omega_m * np.cos(psi) * dt
 
 def hamiltonian(q, p):
@@ -51,14 +59,21 @@ def compute_phi_delta(Q, P):
     return phi, delta
 
 def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq):
+    #par.damp_rate = 0
     noise_D = par.gamma / par.beta**2 * np.sqrt(2 * par.damp_rate * par.h * par.eta * par.Cq / par.radius)
-
+    
     q += Delta_q(p, psi, t, dt/2)
     q = np.mod(q, 2 * np.pi)        
     t_mid = t + dt/2
-    p += dt * dV_dq(q) - dt * 2 * par.damp_rate * p / par.beta**2 + np.sqrt(dt) * noise_D * np.random.normal(size=p.shape) 
+
+    #print((dt * 2 * par.damp_rate * p / par.beta**2)[0], (np.sqrt(dt) * noise_D * np.random.normal(0, 1, size=p.shape))[0], "\n")
+
+    p += dt * dV_dq(q) - dt * 2 * par.damp_rate * p / par.beta**2 + np.sqrt(dt) * noise_D * np.random.normal(0, 1, size=p.shape) 
+
     q += Delta_q(p, psi, t_mid, dt/2)
     q = np.mod(q, 2 * np.pi)
+
+        
 
     return q, p
 

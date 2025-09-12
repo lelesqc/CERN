@@ -7,7 +7,6 @@ h = 328
 eta = 1.26e-3
 nu_s = 0.0075
 T_rev = 0.66e-6
-omega_rev = 9.52e6
 V = 1.5e6
 E_s = 1.5e9
 radius = 4.01
@@ -16,12 +15,11 @@ omega_rev = 2 * np.pi / T_rev
 
 # -------------- model -----------------
 
-damp_rate = 113.64
+damp_rate = U_0 / T_rev / E_s
 beta = 1.0
 gamma = 2935.42
-D = 1.82e-3
 N = 100    # fixed
-N_turn = 100
+N_turn = 500
 phi_0 = 0.0
 e = 1
 lambd = np.sqrt(h * eta * omega_rev)
@@ -52,13 +50,5 @@ n_steps = steps * N_turn
 
 t = 0.0
 
-# ----------- lambda functions -----------
-
-omega_m = nu_m * omega_s
-a = epsilon / nu_m
+#damp_rate = 0
 #a = 0
-T_s = 2 * np.pi / omega_s
-dt = T_s / N
-T_mod = 2 * np.pi / omega_m
-steps = int(round(T_mod / dt))
-n_steps = steps * N_turn

@@ -15,8 +15,9 @@ def run_integrator(mode):
     q = np.copy(q_init)
     p = np.copy(p_init)
 
-    q_last = np.copy(q_init)
-    p_last = np.copy(p_init)
+    quarter = int(par.n_steps * 0.25)
+    half = int(par.n_steps * 0.5)
+    three_quarters = int(par.n_steps * 0.75)
 
     if mode == "tune":
         q_traj = np.zeros((par.n_steps, len(q)))
@@ -26,11 +27,11 @@ def run_integrator(mode):
     elif mode == "phasespace":
         #q_sec = np.zeros((par.n_steps, len(q)))
         #p_sec = np.zeros((par.n_steps, len(p)))
-        sec_count = 0
+        step_count = 0
 
     psi = par.phi_0
 
-    while sec_count < par.n_steps:
+    while step_count < par.n_steps:
         q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq)
 
         if mode == "tune":
@@ -38,26 +39,46 @@ def run_integrator(mode):
             p_traj[step_count] = p
             step_count += 1
 
+            if step_count == quarter:
+                print("Integratore: raggiunto 1/4 degli step.")
+            elif step_count == half:
+                print("Integratore: raggiunto metà degli step.")
+            elif step_count == three_quarters:
+                print("Integratore: raggiunto 3/4 degli step.")
+
         elif mode == "phasespace":
             if np.cos(psi) > 1.0 - 1e-3: 
                 q_last = q
-                p_last = p             
-                #q_sec[sec_count] = q
-                #p_sec[sec_count] = p
-                sec_count += 1
-                
+                p_last = p 
+
+                #print(q[0])
+
+                #q_sec[step_count] = q
+                #p_sec[step_count] = p
+                step_count += 1
+
+                if step_count == par.n_steps // 4:
+                    print("un quarto")
+                elif step_count == par.n_steps // 2:
+                    print("metà") 
+                elif step_count == par.n_steps * 3 / 4:
+                    print("tre quarti") 
+
+                #elif step_count > par.n_steps * 9/10:
+                #    print(q[:10], "\n")
+
         psi += par.omega_m * par.dt
-        par.t += par.dt
+        par.t += par.dt     
 
     if mode == "tune":
         q = q_traj
         p = p_traj
 
-    elif mode == "phasespace":
+    #elif mode == "phasespace":
         #q = q_sec
         #p = p_sec
-        q = q_last
-        p = p_last
+        q = np.copy(q_last)
+        p = np.copy(p_last)
 
     return q, p
 

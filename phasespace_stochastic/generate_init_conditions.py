@@ -33,6 +33,8 @@ def generate_grid(grid_lim, n_particles):
     Q = Q_list
     P = P_list 
 
+    #print(Q)
+
     phi, delta = fn.compute_phi_delta(Q, P)
     phi = np.mod(phi, 2 * np.pi) 
     q_init = phi
@@ -79,6 +81,53 @@ def generate_circle(radius, n_particles):
 
     return q_init, p_init
 
+def generate_gaussian(sigma, n_particles):
+    X_list = np.random.normal(loc=0.0, scale=sigma, size=n_particles)
+    Y_list = np.random.normal(loc=0.0, scale=sigma, size=n_particles)
+
+    mask = (np.abs(X_list) <= 12.9) & (np.abs(Y_list) <= 12.9)
+    X_list = X_list[mask]
+    Y_list = Y_list[mask]
+
+    # Se vuoi comunque avere esattamente n_particles, puoi rigenerare finché non ne hai abbastanza:
+    while X_list.size < n_particles:
+        extra_X = np.random.normal(loc=0.0, scale=sigma, size=n_particles)
+        extra_Y = np.random.normal(loc=0.0, scale=sigma, size=n_particles)
+        mask = (np.abs(extra_X) <= 12.9) & (np.abs(extra_Y) <= 12.9)
+        X_list = np.concatenate([X_list, extra_X[mask]])
+        Y_list = np.concatenate([Y_list, extra_Y[mask]])
+    X_list = X_list[:n_particles]
+    Y_list = Y_list[:n_particles]
+
+    kappa_squared_list = np.empty(n_particles)
+    Omega_list = np.empty(n_particles)
+    Q_list = np.empty(n_particles)
+    P_list = np.empty(n_particles)
+
+    action, theta = fn.compute_action_angle_inverse(X_list, Y_list)
+
+    for i, act in enumerate(action):
+        try:
+            h_0 = fn.find_h0_numerical(act)
+        except ValueError:
+            print(0.5 * (1 + h_0 / (par.A**2)))
+            raise
+        kappa_squared = 0.5 * (1 + h_0 / (par.A**2))
+        kappa_squared_list[i] = kappa_squared
+        Omega_list[i] = np.pi / 2 * (par.A / ellipk(kappa_squared))
+
+    for i, (angle, freq, k2) in enumerate(zip(theta, Omega_list, kappa_squared_list)):
+        Q, P = fn.compute_Q_P(angle, freq, k2)
+        Q_list[i] = Q
+        P_list[i] = P
+
+    phi, delta = fn.compute_phi_delta(Q_list, P_list)
+    phi = np.mod(phi, 2 * np.pi) 
+    q_init = np.array(phi)
+    p_init = np.array(delta)
+
+    return q_init, p_init
+
 def load_data(filename):
     data = np.load(filename)
     q = data['q']
@@ -101,8 +150,9 @@ if __name__ == "__main__":
     if loaded_data is not None:
         q_init, p_init = load_data(loaded_data)
     else:
-        q_init, p_init = generate_grid(grid_lim, n_particles) 
-        #q_init, p_init = generate_circle(grid_lim, n_particles)
+        #q_init, p_init = generate_grid(grid_lim, n_particles) 
+        q_init, p_init = generate_circle(grid_lim, n_particles)
+        #q_init, p_init = generate_gaussian(grid_lim, n_particles)
 
     output_dir = "init_conditions"
     if not os.path.exists(output_dir):
