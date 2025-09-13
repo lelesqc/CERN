@@ -13,7 +13,13 @@ def run_action_angle(mode):
     q = data['q']
     p = data['p']
 
-    n_steps, n_particles = q.shape
+    if q.ndim == 1:
+        n_steps = 1
+        n_particles = q.shape[0]
+        q = q.reshape((1, n_particles))
+        p = p.reshape((1, n_particles))
+    else:
+        n_steps, n_particles = q.shape
 
     actions_list = np.zeros((n_steps, n_particles))
 

@@ -2,9 +2,9 @@
 
 GRID_LIM=12.9
 #GRID_LIM=4.3
-PARTICLES=1000
+PARTICLES=100
 
-MODE="phasespace"  # Options: "tune", "phasespace"
+MODE="phasespace"  # Options: "evolution", "phasespace"
 
 DATA_FILE="../code/integrator/evolved_qp_last.npz"
 
@@ -14,7 +14,7 @@ echo "Evolving the system..."
 
 python generate_init_conditions.py ${GRID_LIM} ${PARTICLES}
 python integrator.py ${MODE}
-#python action_angle.py ${MODE}
+python action_angle.py ${MODE}
 
 #if [ "$MODE" = "tune" ]; then
 #    python tune.py
