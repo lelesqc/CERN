@@ -47,6 +47,9 @@ def run_integrator(mode):
                 q_last = q
                 p_last = p 
 
+                psi_final = psi
+                time_final = par.t
+
                 step_count += 1
 
                 if step_count == par.n_steps // 4:
@@ -67,7 +70,7 @@ def run_integrator(mode):
         q = np.copy(q_last)
         p = np.copy(p_last)
 
-    return q, p
+    return q, p, psi_final, time_final
 
 
 # --------------- Save results ----------------
@@ -75,11 +78,11 @@ def run_integrator(mode):
 
 if __name__ == "__main__":
     mode = sys.argv[1]
-    q, p = run_integrator(mode)
+    q, p, psi, time = run_integrator(mode)
 
     output_dir = "integrator"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     file_path = os.path.join(output_dir, f"evolved_qp_{mode}.npz")
-    np.savez(file_path, q=q, p=p)
+    np.savez(file_path, q=q, p=p, psi=psi, time=time)

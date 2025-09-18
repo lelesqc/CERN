@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import random
 from scipy.special import ellipk
+import matplotlib.pyplot as plt
 
 import params as par
 import functions as fn
@@ -82,36 +83,45 @@ def generate_circle(radius, n_particles):
     return q_init, p_init
 
 def generate_gaussian(sigma, n_particles):
-    X_list = np.random.normal(loc=0.0, scale=sigma, size=n_particles)
-    Y_list = np.random.normal(loc=0.0, scale=sigma, size=n_particles)
+    X_list = []
+    Y_list = []
+    action_list = []
+    theta_list = []
 
-    mask = (np.abs(X_list) <= 12.9) & (np.abs(Y_list) <= 12.9)
-    X_list = X_list[mask]
-    Y_list = Y_list[mask]
+    while len(X_list) < n_particles:
+        # Genera batch di punti
+        X_try = np.random.normal(loc=0.0, scale=sigma, size=n_particles)
+        Y_try = np.random.normal(loc=0.0, scale=sigma, size=n_particles)
+        mask = (np.abs(X_try) <= 12.9) & (np.abs(Y_try) <= 12.9)
+        X_try = X_try[mask]
+        Y_try = Y_try[mask]
 
-    # Se vuoi comunque avere esattamente n_particles, puoi rigenerare finché non ne hai abbastanza:
-    while X_list.size < n_particles:
-        extra_X = np.random.normal(loc=0.0, scale=sigma, size=n_particles)
-        extra_Y = np.random.normal(loc=0.0, scale=sigma, size=n_particles)
-        mask = (np.abs(extra_X) <= 12.9) & (np.abs(extra_Y) <= 12.9)
-        X_list = np.concatenate([X_list, extra_X[mask]])
-        Y_list = np.concatenate([Y_list, extra_Y[mask]])
-    X_list = X_list[:n_particles]
-    Y_list = Y_list[:n_particles]
+        action_try, theta_try = fn.compute_action_angle_inverse(X_try, Y_try)
+
+        for X, Y, act, theta in zip(X_try, Y_try, action_try, theta_try):
+            try:
+                h_0 = fn.find_h0_numerical(act)
+            except ValueError:
+                continue  # Salta questo punto e passa al prossimo
+            X_list.append(X)
+            Y_list.append(Y)
+            action_list.append(act)
+            theta_list.append(theta)
+            if len(X_list) >= n_particles:
+                break
+
+    X_list = np.array(X_list[:n_particles])
+    Y_list = np.array(Y_list[:n_particles])
+    action = np.array(action_list[:n_particles])
+    theta = np.array(theta_list[:n_particles])
 
     kappa_squared_list = np.empty(n_particles)
     Omega_list = np.empty(n_particles)
     Q_list = np.empty(n_particles)
     P_list = np.empty(n_particles)
 
-    action, theta = fn.compute_action_angle_inverse(X_list, Y_list)
-
     for i, act in enumerate(action):
-        try:
-            h_0 = fn.find_h0_numerical(act)
-        except ValueError:
-            print(0.5 * (1 + h_0 / (par.A**2)))
-            raise
+        h_0 = fn.find_h0_numerical(act)
         kappa_squared = 0.5 * (1 + h_0 / (par.A**2))
         kappa_squared_list[i] = kappa_squared
         Omega_list[i] = np.pi / 2 * (par.A / ellipk(kappa_squared))

@@ -18,8 +18,9 @@ def compute_action_angle(kappa_squared, P):
     Omega = np.pi / 2 * (par.A / K_of_kappa)
     x = P / (2 * np.sqrt(kappa_squared) * par.A)
     
-    u = inverse_jacobi('cn', float(x), float(kappa_squared))
-    theta = (Omega / par.A) * u
+    #u = inverse_jacobi('cn', float(x), float(kappa_squared))
+    #theta = (Omega / par.A) * u
+    theta = 1
     return action, theta
     
 def dV_dq(q): 
@@ -59,12 +60,12 @@ def compute_phi_delta(Q, P):
     return phi, delta
 
 def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq):
-    noise_D = par.gamma / par.beta**2 * np.sqrt(2 * par.damp_rate * par.h * par.eta * par.Cq / par.radius)
+    noise_factor = par.gamma / par.beta**2 * np.sqrt(2 * par.damp_rate * par.h * par.eta * par.Cq / par.radius)
     
     q += Delta_q(p, psi, t, dt/2)
     q = np.mod(q, 2 * np.pi)        
     t_mid = t + dt/2
-    p += dt * dV_dq(q) - dt * 2 * par.damp_rate * p / par.beta**2 + np.sqrt(dt) * noise_D * np.random.normal(0, 1, size=p.shape) 
+    p += dt * dV_dq(q) - dt * 2 * par.damp_rate * p / par.beta**2 + np.sqrt(dt) * noise_factor * np.random.normal(0, 1, size=p.shape) 
     q += Delta_q(p, psi, t_mid, dt/2)
     q = np.mod(q, 2 * np.pi)     
 
