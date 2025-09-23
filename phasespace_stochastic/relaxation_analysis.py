@@ -1,8 +1,8 @@
 #%%
 
 import numpy as np
+import scipy
 import matplotlib.pyplot as plt
-import alphashape
 import os
 from tqdm.auto import tqdm
 
@@ -24,8 +24,8 @@ par.t = 0
 
 n_particles = int(q.shape[0])
 
-q_sec = np.zeros((par.n_steps, n_particles))
-p_sec = np.zeros((par.n_steps, n_particles))
+q_sec = np.zeros((par.n_steps // 10, n_particles), dtype=np.float32)
+p_sec = np.zeros((par.n_steps // 10, n_particles), dtype=np.float32)
 sec_count = 0
 
 times = []
@@ -47,40 +47,59 @@ while step < par.n_steps:
 q = q_sec[:sec_count, :]
 p = p_sec[:sec_count, :]
 
-#%%
 
-# shape di q e p: (1'000, 10'000) = (n_punti, n_particelle)
+#%%
+# shape di q e p: (n_punti, n_particelle)
 
 n_times = 10
-actions = np.zeros((n_times, n_particles))
+step = int(len(times)/n_times)
 
-for i, idx in enumerate(range(0, len(times), 100)):
+actions = np.zeros((n_times, n_particles))
+energies = []
+kappa_squared_list = []
+
+for i, idx in enumerate(range(0, len(times), step)):
     t = times[idx]
     h_0 = fn.H0_for_action_angle(q[idx, :], p[idx, :])
+    energies.append(h_0)
     kappa_squared = 0.5 * (1 + h_0 / (par.A**2))
     actions[i, :], _ = fn.compute_action_angle(kappa_squared, 1)
+    h0_of_I = 2 * par.A**2 * (kappa_squared - 1/2)
+    #energies.append(h0_of_I)
 
 actions = np.array(actions)
 
 #%%
+from scipy.integrate import trapezoid
 
-noise_D = (par.gamma / par.beta**2 * np.sqrt(par.damp_rate * par.h * par.eta * par.Cq / par.radius))**2
-temperature = par.beta**2 * noise_D / (2 * par.damp_rate)
-print(temperature)
+noise_D = (par.gamma / par.beta**2 * np.sqrt(2 * par.damp_rate * par.h * par.eta * par.Cq / par.radius))**2
+damping_factor = 2 * par.damp_rate / par.beta**2
+temperature = noise_D / (2 * damping_factor)
 
-temperature = np.mean(h_0)
-print(temperature)
-th_curve = np.exp(- h_0 / temperature)
+for idx in range(len(energies)):
+    E_min = np.min(energies[idx])
+    E_max = np.max(energies[idx])
+    T = temperature
+    #T = np.mean(energies[idx] - E_min)
 
-#print(- h_0 / temperature)
+    energies_pts = np.linspace(E_min - E_min, E_max - E_min, 500)
+    P_H = np.exp(-energies_pts / T)  
+    Z = trapezoid(P_H, energies_pts)           
+    P_H /= Z       
 
-plt.hist(actions[0, :], bins=100)
-plt.yscale("log")
-#plt.plot(actions[9, :], th_curve)
+    plt.hist(energies[idx] - np.min(energies[idx]), bins=100, density=True)
+    plt.title(f"Plot n. {idx}")
+    plt.plot(energies_pts, P_H)
+    #plt.yscale("log")
+    plt.show()
+
+
+#%%
+
+plt.scatter(q, p)
 plt.show()
+print(T)
 
-#plt.hist(actions[9, :], bins=100)
-#plt.show()
 
 #%%
 
