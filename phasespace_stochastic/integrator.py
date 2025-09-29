@@ -6,8 +6,8 @@ from tqdm import tqdm
 import params as par
 import functions as fn
 
-def run_integrator(mode):
-    data = np.load("init_conditions/qp.npz")
+def run_integrator(mode, n_particles):
+    data = np.load(f"init_conditions/qp_{n_particles}.npz")
 
     q_init = data['q']
     p_init = data['p']
@@ -35,11 +35,11 @@ def run_integrator(mode):
                 p_traj[step_count] = p
                 step_count += 1
 
-                if step_count == par.n_steps // 4:
+                if step_count == quarter:
                     print("un quarto")
-                elif step_count == par.n_steps // 2:
+                elif step_count == half:
                     print("metà") 
-                elif step_count == par.n_steps * 3 / 4:
+                elif step_count == three_quarters:
                     print("tre quarti") 
 
         elif mode == "evolution":
@@ -52,12 +52,12 @@ def run_integrator(mode):
 
                 step_count += 1
 
-                if step_count == par.n_steps // 4:
+                if step_count == quarter:
                     print("un quarto")
-                elif step_count == par.n_steps // 2:
+                elif step_count == half:
                     print("metà") 
-                elif step_count == par.n_steps * 3 / 4:
-                    print("tre quarti") 
+                elif step_count == three_quarters:
+                    print("tre quarti")  
 
         psi += par.omega_m * par.dt
         par.t += par.dt     
@@ -78,7 +78,8 @@ def run_integrator(mode):
 
 if __name__ == "__main__":
     mode = sys.argv[1]
-    q, p, psi, time = run_integrator(mode)
+    n_particles = sys.argv[2]
+    q, p, psi, time = run_integrator(mode, n_particles)
 
     output_dir = "integrator"
     if not os.path.exists(output_dir):

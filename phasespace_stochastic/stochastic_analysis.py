@@ -23,7 +23,7 @@ x_ps = phasespace_xy["x"]
 y_ps = phasespace_xy["y"]
 
 q_out = q.copy()
-p_out = p + 0.05
+p_out = p.copy()
 
 q = q_out
 p = p_out
@@ -33,8 +33,7 @@ steps = 500
 psi = psi
 par.t = time
 
-par.a = par.epsilon / par.nu_m
-
+#par.a = par.epsilon / par.nu_m
 
 while step < steps:
     q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq)
@@ -50,6 +49,14 @@ while step < steps:
 
 q = q_last
 p = p_last
+
+#%%
+
+energies = np.abs(fn.hamiltonian(q, p))
+temperature = np.mean(energies)
+
+print(temperature)
+
 
 #%%
 

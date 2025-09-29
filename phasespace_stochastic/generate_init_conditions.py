@@ -67,6 +67,8 @@ def generate_circle(radius, n_particles):
     for i, act in enumerate(action):
         h_0 = fn.find_h0_numerical(act)
         kappa_squared = 0.5 * (1 + h_0 / (par.A**2))
+        if np.any(kappa_squared > 1):
+            print("yeah")
         kappa_squared_list[i] = kappa_squared
         Omega_list[i] = np.pi / 2 * (par.A / ellipk(kappa_squared))
 
@@ -168,5 +170,5 @@ if __name__ == "__main__":
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    file_path = os.path.join(output_dir, f"qp.npz")
+    file_path = os.path.join(output_dir, f"qp_{n_particles}.npz")
     np.savez(file_path, q=q_init, p=p_init)

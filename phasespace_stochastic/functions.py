@@ -41,7 +41,7 @@ def Delta_q(p, psi, t, dt):
 def hamiltonian(q, p):
     H0 = 0.5 * par.lambd**2 * p**2 + par.A**2 * np.cos(q)    
     H1 = par.a * par.omega_m * np.cos(par.omega_m * par.t + par.phi_0) * p
-    
+        
     return H0 + H1
 
 def compute_action_angle_inverse(X, Y):
@@ -60,8 +60,9 @@ def compute_phi_delta(Q, P):
     return phi, delta
 
 def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq):
+    #par.damp_rate = 0
     noise_factor = par.gamma / par.beta**2 * np.sqrt(2 * par.damp_rate * par.h * par.eta * par.Cq / par.radius)
-    
+
     q += Delta_q(p, psi, t, dt/2)
     q = np.mod(q, 2 * np.pi)        
     t_mid = t + dt/2
@@ -79,4 +80,11 @@ def find_h0_numerical(I_target):
         return (8 * par.A / np.pi) * (ellipe(m) - (1 - m) * ellipk(m)) - I_target
 
     epsilon_h = 1e-9 * par.A**2
-    return brentq(G_objective, -par.A**2 + epsilon_h, par.A**2 - epsilon_h)
+    a = -par.A**2 + epsilon_h
+    b = par.A**2 - epsilon_h
+    I_min = (8 * par.A / np.pi) * (ellipe(1e-12) - (1 - 1e-12) * ellipk(1e-12))
+    I_max = (8 * par.A / np.pi) * (ellipe(1 - 1e-12) - (1 - (1 - 1e-12)) * ellipk(1 - 1e-12))
+    if not (I_min <= I_target <= I_max):
+        print(f"Attenzione: I_target={I_target} fuori range [{I_min}, {I_max}]")
+        raise ValueError("I_target fuori range fisico")
+    return brentq(G_objective, a, b)

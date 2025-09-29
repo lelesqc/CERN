@@ -12,8 +12,11 @@ E_s = 1.5e9
 radius = 4.01
 U_0 = 0.11e6
 omega_rev = 2 * np.pi / T_rev
+k_B = 8.617333262e-5
 
 # -------------- model -----------------
+
+k_lele_als = 4257612.877
 
 damp_rate = U_0 / T_rev / E_s
 beta = 1.0
@@ -26,7 +29,7 @@ lambd = np.sqrt(h * eta * omega_rev)
 
 omega_s = omega_rev * np.sqrt(e * h * V * eta / (2 * np.pi * E_s * beta**2))
 A = omega_s / lambd
-Cq = 3.83 * 10e-13
+Cq = 3.83e-13
 
 # -------------- YAML ------------------
 
@@ -50,12 +53,7 @@ n_steps = steps * N_turn
 
 t = 0.0
 
-print(n)
-
 #damp_rate = 0
 a = 0
 
-print(omega_s / lambd**2)
-
-noise_factor = gamma / beta**2 * np.sqrt(2 * damp_rate * h * eta * Cq / radius)
-print(noise_factor)
+print(steps, dt, dt * n_steps)
