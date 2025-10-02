@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm.auto import tqdm
 
-import params as par
+import params_fcc  as par
 import functions as fn
 
 integrator_data = np.load("./integrator/evolved_qp_evolution.npz")

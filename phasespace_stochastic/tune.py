@@ -2,7 +2,7 @@ import os
 import numpy as np
 from scipy.fft import fft, fftfreq
 from scipy.signal.windows import hann
-import params as par
+import params_fcc  as par
 import matplotlib.pyplot as plt
 
 def tune_calculation():

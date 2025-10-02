@@ -2,8 +2,10 @@ import numpy as np
 from scipy.optimize import brentq
 from scipy.special import ellipk, ellipe
 from sage.functions.jacobi import inverse_jacobi, jacobi
+import matplotlib.pyplot as plt
+from scipy import stats
 
-import params as par
+import params_fcc as par
 
 # ------------------ functions -------------------------
 
@@ -60,7 +62,6 @@ def compute_phi_delta(Q, P):
     return phi, delta
 
 def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq):
-    #par.damp_rate = 0
     noise_factor = par.gamma / par.beta**2 * np.sqrt(2 * par.damp_rate * par.h * par.eta * par.Cq / par.radius)
 
     q += Delta_q(p, psi, t, dt/2)

@@ -2,8 +2,9 @@ import os
 import sys
 import numpy as np
 from tqdm.auto import tqdm
+import matplotlib.pyplot as plt
 
-import params as par
+import params_fcc as par
 import functions as fn
 
 
@@ -45,6 +46,9 @@ def run_action_angle(mode):
     y = np.array(y)
 
     actions_list = np.array(actions_list)
+
+    plt.scatter(x, y)
+    plt.show()
 
     return x, y, actions_list
 

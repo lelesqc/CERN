@@ -9,47 +9,49 @@ USARE DIRETTAMENTE LA SECONDA CELLA
 
 """
 
-
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 from tqdm.auto import tqdm
 from scipy.integrate import trapezoid
 
-import params as par
+import params as par_als
+import params_fcc as par_fcc
 import functions as fn
 
 import warnings
 warnings.filterwarnings("ignore")
 
-param_names = ["Cq", "eta", "h", "radius", "gamma"]
-params = [par.Cq, par.eta, par.h, par.radius, par.gamma]
+param_names = ["eta", "h", "radius", "gamma"]
+params = [par_fcc.eta, par_fcc.h, par_fcc.radius, par_fcc.gamma]
 energies_tot = []
 energies_tot_temp = []
 
 for name, default_val in zip(param_names, params):
     if name == "h":
-        par_vals = np.linspace(default_val / 10, default_val * 10, 20)
+        par_vals = np.linspace(par_als.h, default_val, 10)
         par_vals = np.round(par_vals).astype(int)
-    else:
-        par_vals = np.linspace(default_val / 10, default_val * 10, 20)
+    elif name == "eta":
+        par_vals = np.linspace(default_val, par_als.eta, 10)
+    elif name == "radius":
+        par_vals = np.linspace(par_als.radius, default_val, 10)
+    elif name == "gamma":
+        par_vals = np.linspace(par_als.gamma, default_val, 10)
 
     temps_th = []
     temps_emp = []
 
-    print(par_vals[:3], par.beta)
-
     for val in par_vals:
-        setattr(par, name, val)
+        setattr(par_fcc, name, val)
         base_dir="/mnt/c/Users/emanu/OneDrive - Alma Mater Studiorum Università di Bologna/CERN_data/code"
 
-        init_data = np.load("./init_conditions/qp_1000.npz")
+        init_data = np.load("./init_conditions/qp_10000.npz")
 
         q = init_data["q"]
         p = init_data["p"]
 
         psi = 0
-        par.t = 0
+        par_fcc.t = 0
 
         n_particles = int(q.shape[0])
 
@@ -59,42 +61,29 @@ for name, default_val in zip(param_names, params):
 
         times = []
         step = 0
-        for step in tqdm(range(par.n_steps)): 
-            q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq)
+        for step in tqdm(range(par_fcc.n_steps)): 
+            q, p = fn.integrator_step(q, p, psi, par_fcc.t, par_fcc.dt, fn.Delta_q, fn.dV_dq)
 
             if np.cos(psi) > 1.0 - 1e-3:              
                 q_sec = q
                 p_sec = p
 
-            psi += par.omega_m * par.dt
-            par.t += par.dt
+            psi += par_fcc.omega_m * par_fcc.dt
+            par_fcc.t += par_fcc.dt
 
         q = q_sec
         p = p_sec
 
         # shape di q e p: (n_punti, n_particelle)
 
-        #n_times = 10
-        #step = int(len(times)/n_times)
-
-        #actions = np.zeros((n_times, n_particles))
         energies = []
-        #kappa_squared_list = []
-
-        #for i, idx in enumerate(range(0, len(times), step)):
+        
         h_0 = fn.H0_for_action_angle(q, p)
         energies = h_0
-        #kappa_squared = 0.5 * (1 + h_0 / (par.A**2))
-        #actions[i, :], _ = fn.compute_action_angle(kappa_squared, 1)
-        #h0_of_I = 2 * par.A**2 * (kappa_squared - 1/2)
-            #energies.append(h0_of_I)
-
-        #actions = np.array(actions)
 
         E0 = fn.hamiltonian(np.pi, 0)
-        #E_min = np.min(energies[9])
-        noise_D = (par.gamma / par.beta**2 * np.sqrt(2 * par.damp_rate * par.h * par.eta * par.Cq / par.radius))**2
-        damping_factor = 2 * par.damp_rate / par.beta**2
+        noise_D = (par_fcc.gamma / par_fcc.beta**2 * np.sqrt(2 * par_fcc.damp_rate * par_fcc.h * par_fcc.eta * par_fcc.Cq / par_fcc.radius))**2
+        damping_factor = 2 * par_fcc.damp_rate / par_fcc.beta**2
         temperature = noise_D / (2 * damping_factor)
         temps_th.append(temperature)
         temps_emp.append(np.mean(energies - E0))
@@ -109,10 +98,9 @@ for name, default_val in zip(param_names, params):
     plt.scatter(par_vals, temps_emp)
     plt.show()
 
-    # Salva temperature teorica ed empirica in un file .npz
     output_dir = os.path.join("stochastic_studies", "temperatures")
     os.makedirs(output_dir, exist_ok=True)
-    np.savez(os.path.join(output_dir, f"temp_{name}_fcc.npz"), temps_th=temps_th, temps_emp=temps_emp, energies=energies_tot)
+    np.savez(os.path.join(output_dir, f"temp_{name}_mix.npz"), temps_th=temps_th, temps_emp=temps_emp, energies=energies_tot)
 
 #%%
 
@@ -123,14 +111,13 @@ import numpy as np
 import os
 import matplotlib.ticker as ticker
 
-
 dir_data = "./stochastic_studies/temperatures"
 temps_dict = {}
 
 for root, dirs, files in os.walk(dir_data):
     for file in files:
-        if file.startswith("temp_") and file.endswith("_fcc.npz"):
-            param_name = file[len("temp_"):-len("_fcc.npz")]  
+        if file.startswith("temp_") and file.endswith("_mix.npz"):
+            param_name = file[len("temp_"):-len("_mix.npz")]  
             data = np.load(os.path.join(root, file))
             if "temps_th" in data and "temps_emp" in data:
                 temps_dict[param_name] = {
@@ -142,43 +129,56 @@ all_th = []
 all_emp = []
 
 for param_name, temps in temps_dict.items():
+    if param_name == "radius":
+        continue
     temps_th = np.array(temps["temps_th"])
     temps_emp = np.array(temps["temps_emp"])
-    mask = temps_th <= 0.08e2
-    all_th.append(temps_th[mask])
-    all_emp.append(temps_emp[mask])
+    all_th.append(temps_th)
+    all_emp.append(temps_emp)
 
-# Unisci tutti i dati filtrati
-all_th = np.concatenate(all_th)[:26]
-all_emp = np.concatenate(all_emp)[:26]
+all_th = np.concatenate(all_th)
+all_emp = np.concatenate(all_emp)
 
 a = np.array2string(np.max(all_th), formatter={'float_kind':lambda x: "%.2e" % x})
 b = np.array2string(np.max(all_emp), formatter={'float_kind':lambda x: "%.2e" % x})
+
 # Fit 1: solo coefficiente angolare (y = m*x)
 m, = np.linalg.lstsq(all_th.reshape(-1,1), all_emp, rcond=None)[0]
+
+#all_emp = all_emp - 3.851
 
 # Fit 2: coefficiente angolare + intercetta (y = m*x + q)
 m2, q2 = np.polyfit(all_th, all_emp, 1)
 
+
 print(f"Fit y = m*x: m = {m}")
-#print(f"Fit y = m*x + q: m = {m2}, q = {q2}")
+print(f"Fit y = m*x + q: m = {m2}, q = {q2}")
 
 # Plot
-plt.scatter(all_th, all_emp, s=5, alpha=0.7)
-x_fit = np.linspace(all_th.min(), all_th.max(), 100)
-plt.plot(x_fit, m*x_fit, color="orange", label=f"Fit y=mx, m={m:.3g}")
-idx = 29
-plt.scatter(all_th, all_emp, s = 30)
-#plt.plot(x_fit, m2*x_fit + q2, label=f"Fit y=mx+q, m={m2:.3g}, q={q2:.3g}")
+param_names = list(temps_dict.keys())
+cmap = plt.get_cmap('tab10')  # Colormap con 10 colori distinti
+
+plt.figure(figsize=(8,6))
+for i, param_name in enumerate(param_names):
+    if param_name == "radius":
+        continue
+    temps_th = np.array(temps_dict[param_name]["temps_th"])
+    temps_emp = np.array(temps_dict[param_name]["temps_emp"])
+    plt.scatter(temps_th, temps_emp, color=cmap(i), label=param_name, s=14, alpha=1.0)
+
+# Rette del fit
+x_fit = np.linspace(np.min(all_th), np.max(all_th), 100)
+plt.plot(x_fit, m * x_fit, '-', c="grey", label='Fit: y = m·x')
+#plt.plot(x_fit, m2 * x_fit + q2, 'r-', label='Fit: y = m·x + q')
+
 plt.xlabel("T theoretical")
 plt.ylabel("T empirical")
-plt.legend()
 plt.gca().xaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-#plt.xscale("log")
-#plt.yscale("log")
-plt.title(r"Linear fit $T_{th} \ vs \ T_{emp}$ for FCC-ee")
-
+plt.title(r"Linear fit $T_{emp} \ vs \ T_{th}$ for FCC-ee")
+plt.xscale("log")
+plt.yscale("log")
+plt.legend()
 plt.show()
 
 # %%

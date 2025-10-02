@@ -1,10 +1,10 @@
 #!/bin/bash
 
 GRID_LIM=2.0    # FCC
-#GRID_LIM=12.9    # ALS
-PARTICLES=1000
+#GRID_LIM=10.0    # ALS
+PARTICLES=10000
 
-MODE="evolution"  # Options: "evolution", "phasespace"
+MODE="phasespace"  # Options: "evolution", "phasespace"
 
 DATA_FILE="../code/integrator/evolved_qp_last.npz"
 

@@ -16,12 +16,13 @@ k_B = 8.617333262e-5
 
 # -------------- model -----------------
 
-k_lele_als = 4257612.877
+k_lele_als = 4244996.098
 
 damp_rate = U_0 / T_rev / E_s
 beta = 1.0
 gamma = 2935.42
 N = 100    # fixed
+#N_turn = 150    # 3 volte il damping time
 N_turn = 1000
 phi_0 = 0.0
 e = 1
@@ -56,4 +57,5 @@ t = 0.0
 #damp_rate = 0
 a = 0
 
-print(steps, dt, dt * n_steps)
+# tempo totale da usare: 3 * damp_factor = 0.0135s
+print(damp_rate)

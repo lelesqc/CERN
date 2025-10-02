@@ -2,8 +2,9 @@ import os
 import sys
 import numpy as np
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
-import params as par
+import params_fcc as par
 import functions as fn
 
 def run_integrator(mode, n_particles):
@@ -30,9 +31,11 @@ def run_integrator(mode, n_particles):
         q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq)
 
         if mode == "phasespace":
+            psi_final=1
+            time_final=1
             if np.cos(psi) > 1.0 - 1e-3:
-                q_traj[step_count] = q
-                p_traj[step_count] = p
+                q_traj[step_count, :] = q
+                p_traj[step_count, :] = p
                 step_count += 1
 
                 if step_count == quarter:
@@ -69,6 +72,9 @@ def run_integrator(mode, n_particles):
     elif mode == "evolution":
         q = np.copy(q_last)
         p = np.copy(p_last)
+
+    plt.scatter(q, p)
+    plt.show()
 
     return q, p, psi_final, time_final
 

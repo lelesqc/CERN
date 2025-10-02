@@ -5,7 +5,7 @@ import random
 from scipy.special import ellipk
 import matplotlib.pyplot as plt
 
-import params as par
+import params_fcc  as par
 import functions as fn
 
 def generate_grid(grid_lim, n_particles):

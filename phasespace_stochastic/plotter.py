@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
 import functions as fn
-import params as par
+import params_fcc  as par
 
 def plot(mode):
     if mode == "evolution":
@@ -66,23 +66,18 @@ def plot(mode):
 
     if mode == "phasespace":
         action_angle = np.load(f"action_angle/{mode}_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}.npz")
-        integrator = np.load("integrator/evolved_qp_phasespace.npz")
 
-        actions = action_angle['actions_list']
-        x = action_angle["x"]
-        y = action_angle["y"]
+        x = action_angle["x"][::10]
+        y = action_angle["y"][::10]
+
+        print(x.shape)
 
         n_steps, n_particles = x.shape
-        cmap = plt.get_cmap('tab20', n_particles)
 
-        for j in range(n_particles):
-            plt.scatter(x[:, j], y[:, j], color=cmap(j), s=10, label=f'Particle {j}' if n_particles <= 10 else None)
-
-        if n_particles <= 10:
-            plt.legend()
+        plt.scatter(x, y, s=10)
         plt.xlabel("x")
         plt.ylabel("y")
-        plt.title("Traiettorie in action-angle")
+        plt.title("Phase space")
         plt.show()
 
 
