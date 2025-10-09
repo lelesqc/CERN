@@ -22,36 +22,49 @@ import functions as fn
 import warnings
 warnings.filterwarnings("ignore")
 
-param_names = ["eta", "h", "radius", "gamma"]
-params = [par_fcc.eta, par_fcc.h, par_fcc.radius, par_fcc.gamma]
-energies_tot = []
-energies_tot_temp = []
+parameters = par_als
+par_type = "fcc" if parameters is par_fcc else "als"
+
+par = parameters.Params()
+
+param_names = ["h", "gamma", "radius"]
+params = [par.h, par.gamma, par.radius]
+temps_dict = {}
+all_th = []
+all_emp = []
+all_emp_std = []
 
 for name, default_val in zip(param_names, params):
+    par = parameters.Params()
+    
+    par_vals = np.linspace(default_val / 10, default_val * 10, 10)
+    #par_vals = []
+    par_vals = np.append(par_vals, default_val)
+    par_vals = np.sort(par_vals)
+
     if name == "h":
-        par_vals = np.linspace(par_als.h, default_val, 10)
         par_vals = np.round(par_vals).astype(int)
-    elif name == "eta":
-        par_vals = np.linspace(default_val, par_als.eta, 10)
-    elif name == "radius":
-        par_vals = np.linspace(par_als.radius, default_val, 10)
-    elif name == "gamma":
-        par_vals = np.linspace(par_als.gamma, default_val, 10)
+
+    print(par_vals)
 
     temps_th = []
     temps_emp = []
+    temps_emp_std = []
+    energies_tot_temp = []
 
     for val in par_vals:
-        setattr(par_fcc, name, val)
-        base_dir="/mnt/c/Users/emanu/OneDrive - Alma Mater Studiorum Università di Bologna/CERN_data/code"
+        setattr(par, name, val)
+        par.update_dependent()
 
-        init_data = np.load("./init_conditions/qp_10000.npz")
+        print(par.h, par.gamma, par.radius, "eta: ", f"{par.eta:.8f}")
+
+        init_data = np.load("./init_conditions/qp_1000.npz")
 
         q = init_data["q"]
         p = init_data["p"]
 
         psi = 0
-        par_fcc.t = 0
+        par.t = 0
 
         n_particles = int(q.shape[0])
 
@@ -61,15 +74,15 @@ for name, default_val in zip(param_names, params):
 
         times = []
         step = 0
-        for step in tqdm(range(par_fcc.n_steps)): 
-            q, p = fn.integrator_step(q, p, psi, par_fcc.t, par_fcc.dt, fn.Delta_q, fn.dV_dq)
+        for step in tqdm(range(par.n_steps)): 
+            q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq, par)
 
             if np.cos(psi) > 1.0 - 1e-3:              
                 q_sec = q
                 p_sec = p
 
-            psi += par_fcc.omega_m * par_fcc.dt
-            par_fcc.t += par_fcc.dt
+            psi += par.omega_m * par.dt
+            par.t += par.dt
 
         q = q_sec
         p = p_sec
@@ -78,21 +91,30 @@ for name, default_val in zip(param_names, params):
 
         energies = []
         
-        h_0 = fn.H0_for_action_angle(q, p)
+        h_0 = fn.H0_for_action_angle(q, p, par)
         energies = h_0
 
-        E0 = fn.hamiltonian(np.pi, 0)
-        noise_D = (par_fcc.gamma / par_fcc.beta**2 * np.sqrt(2 * par_fcc.damp_rate * par_fcc.h * par_fcc.eta * par_fcc.Cq / par_fcc.radius))**2
-        damping_factor = 2 * par_fcc.damp_rate / par_fcc.beta**2
+        E0 = fn.hamiltonian(np.pi, 0, par)
+        noise_D = (par.gamma / par.beta**2 * np.sqrt(2 * par.damp_rate * par.h * par.eta * par.Cq / par.radius))**2
+        damping_factor = 2 * par.damp_rate / par.beta**2
         temperature = noise_D / (2 * damping_factor)
         temps_th.append(temperature)
         temps_emp.append(np.mean(energies - E0))
-
+        #temps_emp.append(np.var(p))
+        temps_emp_std.append(np.std(energies - E0))
         energies_tot_temp.append(energies)
 
-    energies_tot.append(energies_tot_temp)
+    temps_dict[name] = {
+        "temps_th": np.array(temps_th),
+        "temps_emp": np.array(temps_emp),
+        "temps_emp_std": np.array(temps_emp_std)
+    }
 
-    print(temps_th, temps_emp)
+    # Aggiungi ai dati globali
+    all_th.append(temps_th)
+    all_emp.append(temps_emp)
+    all_emp_std.append(temps_emp_std)
+
     plt.scatter(par_vals, temps_th)
     plt.show()
     plt.scatter(par_vals, temps_emp)
@@ -100,85 +122,90 @@ for name, default_val in zip(param_names, params):
 
     output_dir = os.path.join("stochastic_studies", "temperatures")
     os.makedirs(output_dir, exist_ok=True)
-    np.savez(os.path.join(output_dir, f"temp_{name}_mix.npz"), temps_th=temps_th, temps_emp=temps_emp, energies=energies_tot)
+    np.savez(os.path.join(output_dir, f"temp_{name}_{par_type}.npz"), temps_th=temps_th, temps_emp=temps_emp, temps_emp_std=temps_emp_std)
+
+all_th = np.concatenate(all_th)
+all_emp = np.concatenate(all_emp)
+all_emp_std = np.concatenate(all_emp_std)
 
 #%%
 
-from scipy.stats import linregress
-import functions as fn
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import matplotlib.ticker as ticker
 
 dir_data = "./stochastic_studies/temperatures"
+par_type = "als"
+
 temps_dict = {}
+all_th = []
+all_emp = []
+all_emp_std = []
 
 for root, dirs, files in os.walk(dir_data):
     for file in files:
-        if file.startswith("temp_") and file.endswith("_mix.npz"):
-            param_name = file[len("temp_"):-len("_mix.npz")]  
+        if file.startswith("temp_") and file.endswith(f"_{par_type}.npz"):
+            param_name = file[len("temp_"):-len(f"_{par_type}.npz")]
+            if param_name in ["eta", "Cq"]:
+                continue
             data = np.load(os.path.join(root, file))
-            if "temps_th" in data and "temps_emp" in data:
-                temps_dict[param_name] = {
-                    "temps_th": data["temps_th"],
-                    "temps_emp": data["temps_emp"]
-                }
+            
+            temps_th = np.array(data["temps_th"])
+            temps_emp = np.array(data["temps_emp"])
+            #temps_emp_std = np.array(data["temps_emp_std"])
 
-all_th = []
-all_emp = []
+            temps_dict[param_name] = {
+                "temps_th": data["temps_th"],
+                "temps_emp": data["temps_emp"],
+                #"temps_emp_std": data["temps_emp_std"]
+            }
 
-for param_name, temps in temps_dict.items():
-    if param_name == "radius":
-        continue
-    temps_th = np.array(temps["temps_th"])
-    temps_emp = np.array(temps["temps_emp"])
-    all_th.append(temps_th)
-    all_emp.append(temps_emp)
+            all_th.append(temps_th)
+            all_emp.append(temps_emp)
+            #all_emp_std.append(temps_emp_std)
 
 all_th = np.concatenate(all_th)
 all_emp = np.concatenate(all_emp)
+#all_emp_std = np.concatenate(all_emp_std)
 
-a = np.array2string(np.max(all_th), formatter={'float_kind':lambda x: "%.2e" % x})
-b = np.array2string(np.max(all_emp), formatter={'float_kind':lambda x: "%.2e" % x})
+print(all_th.shape)
 
-# Fit 1: solo coefficiente angolare (y = m*x)
-m, = np.linalg.lstsq(all_th.reshape(-1,1), all_emp, rcond=None)[0]
-
-#all_emp = all_emp - 3.851
-
-# Fit 2: coefficiente angolare + intercetta (y = m*x + q)
-m2, q2 = np.polyfit(all_th, all_emp, 1)
-
+m, = np.linalg.lstsq(all_th.reshape(-1,1), all_emp, rcond=None)[0]    # y = m*x
+m2, q2 = np.polyfit(all_th, all_emp, 1)    # y = m2*x + q2
 
 print(f"Fit y = m*x: m = {m}")
 print(f"Fit y = m*x + q: m = {m2}, q = {q2}")
 
 # Plot
 param_names = list(temps_dict.keys())
-cmap = plt.get_cmap('tab10')  # Colormap con 10 colori distinti
+cmap = plt.get_cmap('tab10')
+true_values = [1, 11, 21, 31, 40]
 
 plt.figure(figsize=(8,6))
 for i, param_name in enumerate(param_names):
-    if param_name == "radius":
+    if param_name in ["eta", "Cq"]:
         continue
     temps_th = np.array(temps_dict[param_name]["temps_th"])
     temps_emp = np.array(temps_dict[param_name]["temps_emp"])
+    #temps_emp_std = np.array(temps_dict[param_name]["temps_emp_std"])
+
+    #plt.errorbar(temps_th, temps_emp, yerr=temps_emp_std / np.sqrt(n_particles), fmt='o', color=cmap(i), markersize=2, capsize=4, alpha=1)
     plt.scatter(temps_th, temps_emp, color=cmap(i), label=param_name, s=14, alpha=1.0)
 
-# Rette del fit
 x_fit = np.linspace(np.min(all_th), np.max(all_th), 100)
-plt.plot(x_fit, m * x_fit, '-', c="grey", label='Fit: y = m·x')
-#plt.plot(x_fit, m2 * x_fit + q2, 'r-', label='Fit: y = m·x + q')
+plt.plot(x_fit, m * x_fit, '-', c="grey", label=f'Fit: y = m·x (m={m:.3g})')
+#plt.plot(x_fit, m2 * x_fit + q2, '--', c="red", label=f'Fit: y = m·x + q (m={m2:.3g}, q={q2:.2g})')
 
 plt.xlabel("T theoretical")
 plt.ylabel("T empirical")
 plt.gca().xaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-plt.title(r"Linear fit $T_{emp} \ vs \ T_{th}$ for FCC-ee")
+plt.title(r"Linear fit $T_{emp} \ vs \ T_{th}$ for ALS")
 plt.xscale("log")
 plt.yscale("log")
 plt.legend()
 plt.show()
 
 # %%
+
