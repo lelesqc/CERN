@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
 import functions as fn
-import params_fcc  as par
+import params  as par
 
 def plot(mode):
     if mode == "evolution":

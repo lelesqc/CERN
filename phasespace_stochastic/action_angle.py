@@ -4,9 +4,8 @@ import numpy as np
 from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
 
-import params_fcc as par
+import params as par
 import functions as fn
-
 
 def run_action_angle(mode):
     data = np.load(f"integrator/evolved_qp_{mode}.npz")

@@ -6,7 +6,7 @@ import os
 from tqdm.auto import tqdm
 from scipy.integrate import trapezoid
 
-import params_fcc as par
+import params as par
 import functions as fn
 
 import warnings
@@ -102,7 +102,7 @@ for i in range(n_times):
     bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
 
     # curva teorica
-    P_H = np.exp(- (np.interp(bin_centers, actions_sorted_i, energies_i) - E0) / (par.k_lele_fcc * temperature))
+    P_H = np.exp(- (np.interp(bin_centers, actions_sorted_i, energies_i) - E0) / (par.k_lele_als * temperature))
     Z = trapezoid(P_H, bin_centers)           
     P_H /= Z 
 
@@ -123,7 +123,7 @@ for i in range(n_times):
 
 plt.hist(actions[-1, :], bins=100, density=True, alpha=0.5, label="Distr. of actions")
 plt.plot(bin_centers, P_H, label="Boltz. distribution")
-plt.title(f"KL Divergence: {chi2:.2f}")
+plt.title(rf"$\chi^2$: {chi2:.2f}")
 plt.legend()
 plt.xlabel("Actions")
 plt.ylabel("Frequency")
@@ -133,10 +133,10 @@ times = np.linspace(0, par.dt * par.n_steps, n_times)
 
 #kl_div_tot = np.array(kl_div_tot)
 
-plt.scatter(times[:n_times//8], chi2_tot[:n_times//8], s=2)
-#plt.title(r"Kullback-Leibler divergence $\rho(I)$ - $\rho_{Boltz}(H(I))$ for FCC-ee")
-#plt.ylabel("KL divergence")
-#plt.xlabel("Time [s]")
+plt.scatter(times, chi2_tot, s=2)
+plt.title(r"$\chi^2$ of $\rho(I)$ - $\rho_{Boltz}(H(I))$ for ALS")
+plt.ylabel(r"$\chi^2$")
+plt.xlabel("Time [s]")
 plt.show()
 
 #%%

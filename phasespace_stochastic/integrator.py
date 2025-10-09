@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-import params_fcc as par
+import params as par
 import functions as fn
 
 def run_integrator(mode, n_particles):

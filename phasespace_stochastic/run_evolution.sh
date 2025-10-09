@@ -1,7 +1,7 @@
 #!/bin/bash
 
-GRID_LIM=2.0    # FCC
-#GRID_LIM=10.0    # ALS
+#GRID_LIM=2.0    # FCC
+GRID_LIM=10.0    # ALS
 PARTICLES=10000
 
 MODE="phasespace"  # Options: "evolution", "phasespace"

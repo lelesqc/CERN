@@ -5,11 +5,11 @@ from sage.functions.jacobi import inverse_jacobi, jacobi
 import matplotlib.pyplot as plt
 from scipy import stats
 
-import params_fcc as par
+import params as par
 
 # ------------------ functions -------------------------
 
-def H0_for_action_angle(q, p):
+def H0_for_action_angle(q, p, par):
     Q = (q + np.pi) / par.lambd
     P = par.lambd * p
     return 0.5 * P**2 - par.A**2 * np.cos(par.lambd * Q)
@@ -25,10 +25,10 @@ def compute_action_angle(kappa_squared, P):
     theta = 1
     return action, theta
     
-def dV_dq(q): 
+def dV_dq(q, par): 
     return par.A**2 * np.sin(q) 
 
-def Delta_q(p, psi, t, dt):
+def Delta_q(p, psi, t, dt, par):
     #print(f"{t:.3f}, {np.cos(psi)}, {par.a_lambda(t):.5f}, {par.omega_lambda(t)/par.omega_s:.5f}")
     val_q0 = par.damp_rate
     val_dq = dt * 2 * par.damp_rate * p[0] / par.beta**2
@@ -40,7 +40,7 @@ def Delta_q(p, psi, t, dt):
     #print(val_q0, val_dq)
     return par.lambd**2 * p * dt + par.a * par.omega_m * np.cos(psi) * dt
 
-def hamiltonian(q, p):
+def hamiltonian(q, p, par):
     H0 = 0.5 * par.lambd**2 * p**2 + par.A**2 * np.cos(q)    
     H1 = par.a * par.omega_m * np.cos(par.omega_m * par.t + par.phi_0) * p
         
@@ -61,14 +61,15 @@ def compute_phi_delta(Q, P):
     phi = par.lambd * Q - np.pi
     return phi, delta
 
-def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq):
+def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq, par):
     noise_factor = par.gamma / par.beta**2 * np.sqrt(2 * par.damp_rate * par.h * par.eta * par.Cq / par.radius)
+    #print(par.eta)
 
-    q += Delta_q(p, psi, t, dt/2)
+    q += Delta_q(p, psi, t, dt/2, par)
     q = np.mod(q, 2 * np.pi)        
     t_mid = t + dt/2
-    p += dt * dV_dq(q) - dt * 2 * par.damp_rate * p / par.beta**2 + np.sqrt(dt) * noise_factor * np.random.normal(0, 1, size=p.shape) 
-    q += Delta_q(p, psi, t_mid, dt/2)
+    p += dt * dV_dq(q, par) - dt * 2 * par.damp_rate * p / par.beta**2 + np.sqrt(dt) * noise_factor * np.random.normal(0, 1, size=p.shape) 
+    q += Delta_q(p, psi, t_mid, dt/2, par)
     q = np.mod(q, 2 * np.pi)     
 
     return q, p

@@ -57,4 +57,3 @@ t = 0.0
 a = 0
 
 # tempo totale da usare: 3 * damp_factor = 0.19s 
-print(damp_rate)
