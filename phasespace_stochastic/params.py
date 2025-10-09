@@ -1,61 +1,62 @@
 import numpy as np
 import yaml
 
-# ------------ machine ----------------
+class Params:
+    def __init__(self, config_path="params.yaml"):
+        # ------------ machine ----------------
+        self.h = 328
+        self.C_gamma = 8.85e-5    # m * GeV^-3
+        self.nu_s = 0.0075
+        self.T_rev = 0.66e-6
+        self.V = 1.5e6
+        self.radius = 4.01
+        self.mc2 = 0.511e6
+        self.gamma = 2935.42
+        self.gamma_transition = 26.44
+        self.E_s = self.gamma * self.mc2
+        self.eta = 1/self.gamma_transition**2 - 1/self.gamma**2
+        self.U_0 = self.C_gamma * (1e-9)**3 * self.E_s**4 / self.radius
+        self.omega_rev = 2 * np.pi / self.T_rev
+        self.k_B = 8.617333262e-5
 
-h = 328
-eta = 1.26e-3
-nu_s = 0.0075
-T_rev = 0.66e-6
-V = 1.5e6
-E_s = 1.5e9
-radius = 4.01
-U_0 = 0.11e6
-omega_rev = 2 * np.pi / T_rev
-k_B = 8.617333262e-5
+        # -------------- model -----------------
+        self.k_lele_als = 4.27e6
+        self.damp_rate = self.U_0 / self.T_rev / self.E_s
+        self.beta = np.sqrt(1 - 1/self.gamma**2)
+        self.N = 100
+        self.N_turn = 500
+        self.phi_0 = 0.0
+        self.e = 1
+        self.lambd = np.sqrt(self.h * self.eta * self.omega_rev)
+        self.omega_s = self.omega_rev * np.sqrt(self.e * self.h * self.V * self.eta / (2 * np.pi * self.E_s * self.beta**2))
+        self.A = self.omega_s / self.lambd
+        self.Cq = 3.83e-13
 
-# -------------- model -----------------
+        # -------------- YAML ------------------
+        with open(config_path) as f:
+            config = yaml.safe_load(f)
+        self.epsilon = config["epsilon"]
+        self.nu_m = config["nu_m"]
 
-k_lele_als = 4244996.098
+        # ------------- variables -----------------
+        self.omega_m = self.nu_m * self.omega_s
+        #self.a = self.epsilon / self.nu_m
+        self.a = 0
+        self.T_s = 2 * np.pi / self.omega_s
+        self.dt = self.T_s / self.N
+        self.T_mod = 2 * np.pi / self.omega_m
+        self.steps = int(round(self.T_mod / self.dt))
+        self.n_steps = self.steps * self.N_turn
+        self.t = 0.0
 
-damp_rate = U_0 / T_rev / E_s
-beta = 1.0
-gamma = 2935.42
-N = 100    # fixed
-#N_turn = 150    # 3 volte il damping time
-N_turn = 1000
-phi_0 = 0.0
-e = 1
-lambd = np.sqrt(h * eta * omega_rev)
+        print(self.E_s, self.U_0)
 
-omega_s = omega_rev * np.sqrt(e * h * V * eta / (2 * np.pi * E_s * beta**2))
-A = omega_s / lambd
-Cq = 3.83e-13
+    def update_dependent(self):
+        self.eta = 1/self.gamma_transition**2 - 1/self.gamma**2
+        self.beta = np.sqrt(1 - 1/self.gamma**2)
 
-# -------------- YAML ------------------
-
-config_path = "params.yaml"
-
-with open(config_path) as f:
-    config = yaml.safe_load(f)
-
-epsilon = config["epsilon"]
-nu_m = config["nu_m"]
-
-# ------------- variables -----------------
-
-omega_m = nu_m * omega_s
-a = epsilon / nu_m
-T_s = 2 * np.pi / omega_s
-dt = T_s / N
-T_mod = 2 * np.pi / omega_m
-steps = int(round(T_mod / dt))
-n_steps = steps * N_turn
-
-t = 0.0
-
-#damp_rate = 0
-a = 0
-
-# tempo totale da usare: 3 * damp_factor = 0.0135s
-print(damp_rate)
+# USO:
+# import params
+# par = params.Params()
+# par.gamma = nuovo_valore
+# par.update_dependent()
