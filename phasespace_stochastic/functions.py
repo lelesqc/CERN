@@ -5,7 +5,9 @@ from sage.functions.jacobi import inverse_jacobi, jacobi
 import matplotlib.pyplot as plt
 from scipy import stats
 
-import params as par
+import params_fcc
+
+par = params_fcc.Params()
 
 # ------------------ functions -------------------------
 
@@ -20,9 +22,9 @@ def compute_action_angle(kappa_squared, P):
     Omega = np.pi / 2 * (par.A / K_of_kappa)
     x = P / (2 * np.sqrt(kappa_squared) * par.A)
     
-    #u = inverse_jacobi('cn', float(x), float(kappa_squared))
-    #theta = (Omega / par.A) * u
-    theta = 1
+    u = inverse_jacobi('cn', float(x), float(kappa_squared))
+    theta = (Omega / par.A) * u
+    #theta = 1
     return action, theta
     
 def dV_dq(q, par): 
@@ -62,6 +64,7 @@ def compute_phi_delta(Q, P):
     return phi, delta
 
 def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq, par):
+    #par.damp_rate=0
     noise_factor = par.gamma / par.beta**2 * np.sqrt(2 * par.damp_rate * par.h * par.eta * par.Cq / par.radius)
     #print(par.eta)
 
@@ -90,3 +93,13 @@ def find_h0_numerical(I_target):
         print(f"Attenzione: I_target={I_target} fuori range [{I_min}, {I_max}]")
         raise ValueError("I_target fuori range fisico")
     return brentq(G_objective, a, b)
+
+def H_of_I(action, angle, q, p, kappa):
+    q_term = np.exp(- np.pi * ellipk(1-kappa) / ellipk(kappa))
+    G = 2 * np.pi * par.A / (par.lambd * ellipk(kappa)) * np.sqrt(q_term) / (1 + q_term)
+
+    H0 = H0_for_action_angle(q, p, par)
+    H1 = par.epsilon * G * np.cos(angle)
+    term = action * par.omega_m
+
+    return H0 + H1 - term

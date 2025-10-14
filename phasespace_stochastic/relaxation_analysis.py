@@ -22,7 +22,7 @@ import functions as fn
 import warnings
 warnings.filterwarnings("ignore")
 
-parameters = par_als
+parameters = par_fcc
 par_type = "fcc" if parameters is par_fcc else "als"
 
 par = parameters.Params()
@@ -38,7 +38,6 @@ for name, default_val in zip(param_names, params):
     par = parameters.Params()
     
     par_vals = np.linspace(default_val / 10, default_val * 10, 10)
-    #par_vals = []
     par_vals = np.append(par_vals, default_val)
     par_vals = np.sort(par_vals)
 
@@ -58,7 +57,7 @@ for name, default_val in zip(param_names, params):
 
         print(par.h, par.gamma, par.radius, "eta: ", f"{par.eta:.8f}")
 
-        init_data = np.load("./init_conditions/qp_1000.npz")
+        init_data = np.load("./init_conditions/qp_10000.npz")
 
         q = init_data["q"]
         p = init_data["p"]
@@ -136,7 +135,7 @@ import os
 import matplotlib.ticker as ticker
 
 dir_data = "./stochastic_studies/temperatures"
-par_type = "als"
+par_type = "fcc"
 
 temps_dict = {}
 all_th = []
@@ -147,8 +146,6 @@ for root, dirs, files in os.walk(dir_data):
     for file in files:
         if file.startswith("temp_") and file.endswith(f"_{par_type}.npz"):
             param_name = file[len("temp_"):-len(f"_{par_type}.npz")]
-            if param_name in ["eta", "Cq"]:
-                continue
             data = np.load(os.path.join(root, file))
             
             temps_th = np.array(data["temps_th"])
@@ -180,12 +177,9 @@ print(f"Fit y = m*x + q: m = {m2}, q = {q2}")
 # Plot
 param_names = list(temps_dict.keys())
 cmap = plt.get_cmap('tab10')
-true_values = [1, 11, 21, 31, 40]
 
 plt.figure(figsize=(8,6))
 for i, param_name in enumerate(param_names):
-    if param_name in ["eta", "Cq"]:
-        continue
     temps_th = np.array(temps_dict[param_name]["temps_th"])
     temps_emp = np.array(temps_dict[param_name]["temps_emp"])
     #temps_emp_std = np.array(temps_dict[param_name]["temps_emp_std"])
@@ -201,7 +195,7 @@ plt.xlabel("T theoretical")
 plt.ylabel("T empirical")
 plt.gca().xaxis.set_major_formatter(ticker.ScalarFormatter(useMathText=True))
 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-plt.title(r"Linear fit $T_{emp} \ vs \ T_{th}$ for ALS")
+plt.title(r"Linear fit $T_{emp} \ vs \ T_{th}$ for FCC-ee")
 plt.xscale("log")
 plt.yscale("log")
 plt.legend()

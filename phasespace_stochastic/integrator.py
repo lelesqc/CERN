@@ -4,8 +4,10 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-import params as par
+import params_fcc
 import functions as fn
+
+par = params_fcc.Params()
 
 def run_integrator(mode, n_particles):
     data = np.load(f"init_conditions/qp_{n_particles}.npz")
@@ -26,9 +28,9 @@ def run_integrator(mode, n_particles):
         q_traj = np.zeros((par.n_steps, len(q)))
         p_traj = np.zeros((par.n_steps, len(p)))
     
-    step_count = 0    
+    step_count = 0  
     while step_count < par.n_steps:
-        q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq)
+        q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq, par)
 
         if mode == "phasespace":
             psi_final=1
@@ -36,14 +38,18 @@ def run_integrator(mode, n_particles):
             if np.cos(psi) > 1.0 - 1e-3:
                 q_traj[step_count, :] = q
                 p_traj[step_count, :] = p
-                step_count += 1
 
-                if step_count == quarter:
-                    print("un quarto")
-                elif step_count == half:
-                    print("metà") 
-                elif step_count == three_quarters:
-                    print("tre quarti") 
+                #print(step_count)
+
+            if step_count == quarter:
+                print("un quarto")
+            elif step_count == half:
+                print("metà") 
+            elif step_count == three_quarters:
+                print("tre quarti") 
+            
+            step_count += 1
+
 
         elif mode == "evolution":
             if np.cos(psi) > 1.0 - 1e-3: 
@@ -53,14 +59,14 @@ def run_integrator(mode, n_particles):
                 psi_final = psi
                 time_final = par.t
 
-                step_count += 1
+            step_count += 1
 
-                if step_count == quarter:
-                    print("un quarto")
-                elif step_count == half:
-                    print("metà") 
-                elif step_count == three_quarters:
-                    print("tre quarti")  
+            if step_count == quarter:
+                print("un quarto")
+            elif step_count == half:
+                print("metà") 
+            elif step_count == three_quarters:
+                print("tre quarti")  
 
         psi += par.omega_m * par.dt
         par.t += par.dt     
@@ -72,9 +78,6 @@ def run_integrator(mode, n_particles):
     elif mode == "evolution":
         q = np.copy(q_last)
         p = np.copy(p_last)
-
-    plt.scatter(q, p)
-    plt.show()
 
     return q, p, psi_final, time_final
 

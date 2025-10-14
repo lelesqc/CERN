@@ -20,11 +20,11 @@ class Params:
         self.k_B = 8.617333262e-5
 
         # -------------- model -----------------
-        self.k_lele_als = 4.27e6
+        self.k_lele_als = 4.54e6
         self.damp_rate = self.U_0 / self.T_rev / self.E_s
         self.beta = np.sqrt(1 - 1/self.gamma**2)
         self.N = 100
-        self.N_turn = 500
+        self.N_turn = 2500
         self.phi_0 = 0.0
         self.e = 1
         self.lambd = np.sqrt(self.h * self.eta * self.omega_rev)
@@ -49,8 +49,6 @@ class Params:
         self.n_steps = self.steps * self.N_turn
         self.t = 0.0
 
-        print(self.E_s, self.U_0)
-
     def update_dependent(self):
         self.eta = 1/self.gamma_transition**2 - 1/self.gamma**2
         self.beta = np.sqrt(1 - 1/self.gamma**2)
@@ -60,3 +58,5 @@ class Params:
 # par = params.Params()
 # par.gamma = nuovo_valore
 # par.update_dependent()
+
+print(1 / (2*Params().damp_rate), 1 / Params().omega_s)

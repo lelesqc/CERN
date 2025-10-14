@@ -5,8 +5,10 @@ import random
 from scipy.special import ellipk
 import matplotlib.pyplot as plt
 
-import params  as par
+import params_fcc
 import functions as fn
+
+par = params_fcc.Params()
 
 def generate_grid(grid_lim, n_particles):
     #X = np.linspace(-0.01, grid_lim, n_particles)
@@ -84,17 +86,16 @@ def generate_circle(radius, n_particles):
 
     return q_init, p_init
 
-def generate_gaussian(sigma, n_particles):
+def generate_gaussian(sigma, n_particles, x_min=2, x_max=2.9, y_min=-1, y_max=1):
     X_list = []
     Y_list = []
     action_list = []
     theta_list = []
 
     while len(X_list) < n_particles:
-        # Genera batch di punti
-        X_try = np.random.normal(loc=0.0, scale=sigma, size=n_particles)
+        X_try = np.random.normal(loc=2.5, scale=sigma, size=n_particles)
         Y_try = np.random.normal(loc=0.0, scale=sigma, size=n_particles)
-        mask = (np.abs(X_try) <= 12.9) & (np.abs(Y_try) <= 12.9)
+        mask = (X_try >= x_min) & (X_try <= x_max) & (Y_try >= y_min) & (Y_try <= y_max)
         X_try = X_try[mask]
         Y_try = Y_try[mask]
 
@@ -104,7 +105,7 @@ def generate_gaussian(sigma, n_particles):
             try:
                 h_0 = fn.find_h0_numerical(act)
             except ValueError:
-                continue  # Salta questo punto e passa al prossimo
+                continue
             X_list.append(X)
             Y_list.append(Y)
             action_list.append(act)
@@ -163,8 +164,8 @@ if __name__ == "__main__":
         q_init, p_init = load_data(loaded_data)
     else:
         #q_init, p_init = generate_grid(grid_lim, n_particles) 
-        q_init, p_init = generate_circle(grid_lim, n_particles)
-        #q_init, p_init = generate_gaussian(grid_lim, n_particles)
+        #q_init, p_init = generate_circle(grid_lim, n_particles)
+        q_init, p_init = generate_gaussian(grid_lim, n_particles)
 
     output_dir = "init_conditions"
     if not os.path.exists(output_dir):

@@ -4,8 +4,10 @@ import numpy as np
 from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
 
-import params as par
+import params_fcc
 import functions as fn
+
+par = params_fcc.Params()
 
 def run_action_angle(mode):
     data = np.load(f"integrator/evolved_qp_{mode}.npz")
@@ -28,7 +30,7 @@ def run_action_angle(mode):
     
     for j in tqdm(range(n_particles)):
         for i in range(n_steps):
-            h_0 = fn.H0_for_action_angle(q[i, j], p[i, j])
+            h_0 = fn.H0_for_action_angle(q[i, j], p[i, j], par)
             kappa_squared = 0.5 * (1 + h_0 / (par.A**2))
 
             if 0 < kappa_squared < 1:
@@ -45,9 +47,6 @@ def run_action_angle(mode):
     y = np.array(y)
 
     actions_list = np.array(actions_list)
-
-    plt.scatter(x, y)
-    plt.show()
 
     return x, y, actions_list
 
