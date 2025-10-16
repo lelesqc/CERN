@@ -5,9 +5,9 @@ from sage.functions.jacobi import inverse_jacobi, jacobi
 import matplotlib.pyplot as plt
 from scipy import stats
 
-import params_fcc
+import params
 
-par = params_fcc.Params()
+par = params.Params()
 
 # ------------------ functions -------------------------
 
@@ -66,7 +66,6 @@ def compute_phi_delta(Q, P):
 def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq, par):
     #par.damp_rate=0
     noise_factor = par.gamma / par.beta**2 * np.sqrt(2 * par.damp_rate * par.h * par.eta * par.Cq / par.radius)
-    #print(par.eta)
 
     q += Delta_q(p, psi, t, dt/2, par)
     q = np.mod(q, 2 * np.pi)        

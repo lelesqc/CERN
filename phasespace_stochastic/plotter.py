@@ -2,12 +2,11 @@ import sys
 import numpy as np
 import scipy
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
 
 import functions as fn
-import params_fcc
+import params
 
-par = params_fcc.Params()
+par = params.Params()
 
 def plot(mode):
     if mode == "evolution":
@@ -16,25 +15,6 @@ def plot(mode):
 
         x = data["x"]
         y = data["y"]
-
-        q = integrator['q']
-        p = integrator['p']
-
-        energies = np.array(fn.hamiltonian(q, p, par))
-        energies_center = energies[energies < 0]
-        energies_island = energies[energies > 0]
-
-        q_center = q[energies < 0]
-        p_center = p[energies < 0]
-
-        q0 = np.mean(q_center)
-        p0 = np.mean(p_center)
-
-        h0_center = fn.hamiltonian(q0, p0, par)
-
-        delta_E = energies_center - h0_center
-
-        temp = np.mean(energies)
       
         """plt.hist(delta_E, bins=25, density=True, alpha=0.5, label="Simulazione")
         plt.plot(bin_centers, exp_func(bin_centers, T_fit, norm_fit), 'r-', lw=2, label=fr"Fit $T={T_fit:.2f}$")
@@ -45,12 +25,17 @@ def plot(mode):
         #plt.plot(energies_neg, P_H, 'r-', lw=2, label="Teorica $e^{-(E-E_0)/T_{eff}}$")
         plt.show()
         """
-        ps = np.load("./action_angle/phasespace_a0.050_nu0.80.npz")
+        ps = np.load("./action_angle/phasespace_a0.050_nu0.80_extra.npz")
         x_ps = ps["x"]
         y_ps = ps["y"]
 
-        plt.scatter(x_ps, y_ps, s=1)
-        plt.scatter(x, y, s=1)
+        plt.scatter(x_ps, y_ps, s=1, label="Phase space")
+        plt.scatter(x, y, s=1, label="Distribution")
+        plt.legend()
+        plt.xlabel("X")
+        plt.ylabel("Y")
+        plt.axis("square")
+        #plt.savefig("../results/phasespaces/ps_a0.050_nu0.80_with_damping_als.png")
         plt.show()
 
     if mode == "phasespace":
@@ -59,13 +44,11 @@ def plot(mode):
         x = action_angle["x"]
         y = action_angle["y"]
 
-        n_steps, n_particles = x.shape
-
-        plt.scatter(x, y, s=10)
+        plt.scatter(x, y, s=1)
         plt.xlabel("x")
         plt.ylabel("y")
         plt.title("Phase space")
-        #plt.savefig(f"./phasespaces/ps_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}.png", dpi=200)
+        #plt.savefig(f"../results/phasespaces/ps_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}_als.png", dpi=200)
         plt.show()
 
 

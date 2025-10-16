@@ -16,7 +16,7 @@ from tqdm.auto import tqdm
 from scipy.integrate import trapezoid
 
 import params as par_als
-import params_fcc as par_fcc
+import params as par_fcc
 import functions as fn
 
 import warnings

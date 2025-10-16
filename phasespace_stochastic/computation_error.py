@@ -6,23 +6,22 @@ import os
 from tqdm.auto import tqdm
 from scipy.integrate import trapezoid
 
-import params_fcc
+import params
 import functions as fn
 
 import warnings
 warnings.filterwarnings("ignore")
 
-par = params_fcc.Params()
+par = params.Params()
 
 base_dir="/mnt/c/Users/emanu/OneDrive - Alma Mater Studiorum Università di Bologna/CERN_data/code"
 
 init_data = np.load("./init_conditions/qp_10000.npz")
+ps_qp = np.load("./integrator/evolved_qp_phasespace.npz")
+ps_xy = np.load("./action_angle/phasespace_a0.050_nu0.80.npz")
 
 q = init_data["q"]
 p = init_data["p"]
-
-plt.scatter(q, p)
-plt.show()
 
 psi = 0
 par.t = 0
@@ -51,25 +50,24 @@ for step in tqdm(range(par.n_steps)):
 q = q_sec[:sec_count, :]
 p = p_sec[:sec_count, :]
 
+
 #%%
 
 # DA USARE PER TROVARE VARIANZA PARTICELLE DENTRO ISOLA
 
-thr = 25
 energies = np.empty(q.shape[0], dtype=object)
-p_vars = np.zeros(q.shape[0]-thr)
+p_vars = np.zeros(q.shape[0])
 
-q_mask = np.empty(q.shape[0]-thr, dtype=object)
-p_mask = np.empty(p.shape[0]-thr, dtype=object)
+q_mask = np.empty(q.shape[0], dtype=object)
+p_mask = np.empty(p.shape[0], dtype=object)
 
 for i in tqdm(range(energies.shape[0])):
     energies_i = fn.hamiltonian(q[i, :], p[i, :], par)
 
-    if i >= thr:
-        mask = energies_i > 0
-        q_mask[i-thr] = q[i, :][mask]
-        p_mask[i-thr] = p[i, :][mask]
-        p_vars[i-thr] = np.var(p_mask[i-thr]) 
+    mask = energies_i > 0
+    q_mask[i] = q[i, :][mask]
+    p_mask[i] = p[i, :][mask]
+    p_vars[i] = np.var(p_mask[i]) 
 
 times_list = np.linspace(0, par.t-par.dt, p_vars.shape[0])
 
@@ -154,10 +152,8 @@ for i, idx in enumerate(range(0, len(times), steps)):
     
     h0_of_I = 2 * par.A**2 * (kappa_squared - 1/2)
     energies.append(h0_of_I)
-    energies.append(h_0)
 
 E0 = fn.hamiltonian(np.pi, 0, par)
-energies = [e_i[e_i > 0] for e_i in energies]
 
 #%%
 
@@ -167,10 +163,11 @@ noise_D = (par.gamma / par.beta**2 * np.sqrt(2 * par.damp_rate * par.h * par.eta
 damping_factor = 2 * par.damp_rate / par.beta**2
 temperature = noise_D / (2 * damping_factor)
 
+print(temperature)
+
 
 #%%
 
-from scipy.special import rel_entr
 
 chi2_tot = []
 
@@ -189,11 +186,11 @@ for i in range(n_times):
     actions_sorted_i = actions[i, :][sorted_idx]
     
     # istogramma
-    hist, bin_edges = np.histogram(energies_i, bins=100, density=True)
+    hist, bin_edges = np.histogram(actions[i, :], bins=100, density=True)
     bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
 
     # curva teorica
-    P_H = np.exp(- (np.interp(bin_centers, actions_sorted_i, energies_i) - np.min(energies) / (par.k_lele_fcc * temperature)))
+    P_H = np.exp(- (np.interp(bin_centers, actions_sorted_i, energies_i) - E0) / (par.k_lele_als * temperature))
     Z = trapezoid(P_H, bin_centers)           
     P_H /= Z 
 
@@ -202,12 +199,11 @@ for i in range(n_times):
     chi2 = np.sum((hist - P_H)**2 / (P_H + epsilon))
     chi2_tot.append(chi2)
 
-    plt.hist(energies_i, bins=100, density=True, alpha=0.5, label="Empirico")
-    plt.plot(bin_centers, P_H, label="Teorico")
-    plt.legend()
-    plt.show()
+    #plt.hist(actions[i, :], bins=100, density=True, alpha=0.5, label="Empirico")
+    #plt.plot(bin_centers, P_H, label="Teorico")
+    #plt.legend()
+    #plt.show()
 
-plt.hist(actions, bins=100, density=True, alpha=0.5, label="Distr. of actions")
 plt.hist(actions[-1, :], bins=100, density=True, alpha=0.5, label="Distr. of actions")
 plt.plot(bin_centers, P_H, label="Boltz. distribution")
 plt.title(rf"$\chi^2$: {chi2:.2f}")
@@ -215,3 +211,12 @@ plt.legend()
 plt.xlabel("Actions")
 plt.ylabel("Frequency")
 plt.show()
+
+print(chi2_tot[-1])
+timez = np.linspace(0, times[-2], len(chi2_tot))
+plt.scatter(timez, chi2_tot, s=2)
+plt.xlabel("Time [s]")
+plt.yscale("log")
+plt.ylabel(r"$\chi^2$")
+
+# %%

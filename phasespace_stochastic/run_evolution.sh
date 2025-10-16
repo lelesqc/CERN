@@ -2,10 +2,10 @@
 
 #GRID_LIM=1.9    # FCC
 #GRID_LIM=10.0    # ALS
-GRID_LIM=0.6    # FCC gaussian
+#GRID_LIM=0.6    # FCC gaussian
+GRID_LIM=3.33    # ALS gaussian
 PARTICLES=10000
-
-MODE="evolution"  # Options: "evolution", "phasespace"
+MODE="phasespace"  # Options: "evolution", "phasespace"
 
 DATA_FILE="../code/integrator/evolved_qp_last.npz"
 
@@ -24,3 +24,7 @@ python action_angle.py ${MODE}
 python plotter.py ${MODE}
 
 echo "Completed."
+
+
+# PUNTO FISSO ISOLA FCC: (2.66, -0.06)
+# PUNTO FISSO ISOLA ALS: (10.3, -0.2)

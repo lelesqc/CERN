@@ -4,10 +4,10 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-import params_fcc
+import params
 import functions as fn
 
-par = params_fcc.Params()
+par = params.Params()
 
 def run_integrator(mode, n_particles):
     data = np.load(f"init_conditions/qp_{n_particles}.npz")
@@ -17,6 +17,9 @@ def run_integrator(mode, n_particles):
 
     q = np.copy(q_init)
     p = np.copy(p_init)
+
+    avg_energies = np.zeros(par.n_steps)
+    variances = np.zeros(par.n_steps)
 
     psi = par.phi_0
 
@@ -28,6 +31,7 @@ def run_integrator(mode, n_particles):
         q_traj = np.zeros((par.n_steps, len(q)))
         p_traj = np.zeros((par.n_steps, len(p)))
     
+    sec_count = 0
     step_count = 0  
     while step_count < par.n_steps:
         q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq, par)
@@ -36,11 +40,14 @@ def run_integrator(mode, n_particles):
             psi_final=1
             time_final=1
             if np.cos(psi) > 1.0 - 1e-3:
-                q_traj[step_count, :] = q
-                p_traj[step_count, :] = p
+                q_traj[sec_count, :] = q
+                p_traj[sec_count, :] = p
+                energies = np.mean(fn.hamiltonian(q, p, par))
+                avg_energies[sec_count] = energies
+                variances[sec_count] = np.var(p)
 
-                #print(step_count)
-
+                sec_count += 1
+                
             if step_count == quarter:
                 print("un quarto")
             elif step_count == half:
@@ -53,8 +60,8 @@ def run_integrator(mode, n_particles):
 
         elif mode == "evolution":
             if np.cos(psi) > 1.0 - 1e-3: 
-                q_last = q
-                p_last = p 
+                q_last = np.copy(q)
+                p_last = np.copy(p)
 
                 psi_final = psi
                 time_final = par.t
@@ -72,8 +79,25 @@ def run_integrator(mode, n_particles):
         par.t += par.dt     
 
     if mode == "phasespace":
-        q = q_traj
-        p = p_traj
+        q = q_traj[:sec_count, :]
+        p = p_traj[:sec_count, :]
+        avg_energies = avg_energies[:sec_count]
+        avg_energies /= par.omega_rev
+        variances = variances[:sec_count]
+
+        times = np.linspace(0, par.t - par.dt, sec_count)
+        plt.scatter(times, avg_energies, s=1)
+        plt.xlabel("Time [s]")
+        plt.ylabel(r"$\mathcal{H} / \omega_\text{rev}$")
+        plt.savefig("../results/island/mean_energy_vs_time")
+        plt.show()
+
+        plt.scatter(times, variances, s=1)
+        plt.xlabel("Time [s]")
+        plt.ylabel("Variance")
+        plt.yscale("log")
+        plt.savefig("../results/island/variance_vs_time")
+        plt.show()
 
     elif mode == "evolution":
         q = np.copy(q_last)

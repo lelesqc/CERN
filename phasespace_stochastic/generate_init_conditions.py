@@ -5,10 +5,10 @@ import random
 from scipy.special import ellipk
 import matplotlib.pyplot as plt
 
-import params_fcc
+import params
 import functions as fn
 
-par = params_fcc.Params()
+par = params.Params()
 
 def generate_grid(grid_lim, n_particles):
     #X = np.linspace(-0.01, grid_lim, n_particles)
@@ -86,14 +86,18 @@ def generate_circle(radius, n_particles):
 
     return q_init, p_init
 
-def generate_gaussian(sigma, n_particles, x_min=2, x_max=2.9, y_min=-1, y_max=1):
+def generate_gaussian(sigma, n_particles, x_center, x_min, x_max, y_min, y_max):
+    ps = np.load("./action_angle/phasespace_a0.050_nu0.80_extra.npz")
+    x_ps = ps["x"]
+    y_ps = ps["y"]
+
     X_list = []
     Y_list = []
     action_list = []
     theta_list = []
 
     while len(X_list) < n_particles:
-        X_try = np.random.normal(loc=2.5, scale=sigma, size=n_particles)
+        X_try = np.random.normal(loc=x_center, scale=sigma, size=n_particles)
         Y_try = np.random.normal(loc=0.0, scale=sigma, size=n_particles)
         mask = (X_try >= x_min) & (X_try <= x_max) & (Y_try >= y_min) & (Y_try <= y_max)
         X_try = X_try[mask]
@@ -117,6 +121,10 @@ def generate_gaussian(sigma, n_particles, x_min=2, x_max=2.9, y_min=-1, y_max=1)
     Y_list = np.array(Y_list[:n_particles])
     action = np.array(action_list[:n_particles])
     theta = np.array(theta_list[:n_particles])
+
+    plt.scatter(X_list, Y_list, s=1)
+    plt.scatter(x_ps, y_ps, s=2)
+    plt.show()
 
     kappa_squared_list = np.empty(n_particles)
     Omega_list = np.empty(n_particles)
@@ -165,7 +173,9 @@ if __name__ == "__main__":
     else:
         #q_init, p_init = generate_grid(grid_lim, n_particles) 
         #q_init, p_init = generate_circle(grid_lim, n_particles)
-        q_init, p_init = generate_gaussian(grid_lim, n_particles)
+        q_init, p_init = generate_gaussian(grid_lim, n_particles, 10, 8, 10.5, -5, 5)    #ALS
+        #q_init, p_init = generate_gaussian(grid_lim, n_particles, 2.5, 2, 2.9, -1, 1)    #FCC
+
 
     output_dir = "init_conditions"
     if not os.path.exists(output_dir):

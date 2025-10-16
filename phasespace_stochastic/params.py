@@ -24,7 +24,8 @@ class Params:
         self.damp_rate = self.U_0 / self.T_rev / self.E_s
         self.beta = np.sqrt(1 - 1/self.gamma**2)
         self.N = 100
-        self.N_turn = 2500
+        self.N_turn = 675    # 15 volte il damping time
+        #self.N_turn = 2500
         self.phi_0 = 0.0
         self.e = 1
         self.lambd = np.sqrt(self.h * self.eta * self.omega_rev)
@@ -40,8 +41,8 @@ class Params:
 
         # ------------- variables -----------------
         self.omega_m = self.nu_m * self.omega_s
-        #self.a = self.epsilon / self.nu_m
-        self.a = 0
+        self.a = self.epsilon / self.nu_m
+        #self.a = 0
         self.T_s = 2 * np.pi / self.omega_s
         self.dt = self.T_s / self.N
         self.T_mod = 2 * np.pi / self.omega_m
@@ -59,4 +60,5 @@ class Params:
 # par.gamma = nuovo_valore
 # par.update_dependent()
 
-print(1 / (2*Params().damp_rate), 1 / Params().omega_s)
+#print((1 / (2 * Params().damp_rate) * 10) / Params().dt)
+#print(58000/125)
