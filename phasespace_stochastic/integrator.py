@@ -4,10 +4,10 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-import params
+import params_fcc
 import functions as fn
 
-par = params.Params()
+par = params_fcc.Params()
 
 def run_integrator(mode, n_particles):
     data = np.load(f"init_conditions/qp_{n_particles}.npz")
@@ -85,11 +85,10 @@ def run_integrator(mode, n_particles):
         avg_energies /= par.omega_rev
         variances = variances[:sec_count]
 
-        times = np.linspace(0, par.t - par.dt, sec_count)
+        """times = np.linspace(0, par.t - par.dt, sec_count)
         plt.scatter(times, avg_energies, s=1)
         plt.xlabel("Time [s]")
         plt.ylabel(r"$\mathcal{H} / \omega_\text{rev}$")
-        plt.savefig("../results/island/mean_energy_vs_time")
         plt.show()
 
         plt.scatter(times, variances, s=1)
@@ -97,11 +96,13 @@ def run_integrator(mode, n_particles):
         plt.ylabel("Variance")
         plt.yscale("log")
         plt.savefig("../results/island/variance_vs_time")
-        plt.show()
+        plt.show()"""
 
     elif mode == "evolution":
         q = np.copy(q_last)
         p = np.copy(p_last)
+
+        print(par.sigma)
 
     return q, p, psi_final, time_final
 

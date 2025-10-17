@@ -6,13 +6,13 @@ import os
 from tqdm.auto import tqdm
 from scipy.integrate import trapezoid
 
-import params
+import params_fcc
 import functions as fn
 
 import warnings
 warnings.filterwarnings("ignore")
 
-par = params.Params()
+par = params_fcc.Params()
 
 base_dir="/mnt/c/Users/emanu/OneDrive - Alma Mater Studiorum Università di Bologna/CERN_data/code"
 

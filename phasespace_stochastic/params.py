@@ -60,5 +60,5 @@ class Params:
 # par.gamma = nuovo_valore
 # par.update_dependent()
 
-#print((1 / (2 * Params().damp_rate) * 10) / Params().dt)
+print(1 / (2 * Params().damp_rate))
 #print(58000/125)

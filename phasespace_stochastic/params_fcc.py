@@ -25,7 +25,7 @@ class Params:
         self.damp_rate = self.U_0 / self.T_rev / self.E_s    # alpha_E
         self.beta = np.sqrt(1 - 1/self.gamma**2)
         self.N = 100
-        self.N_turn = 130    # 10 volte il damping time
+        self.N_turn = 300    # circa 10 volte il damping time
         self.phi_0 = 0.0
         self.e = 1
         self.lambd = np.sqrt(self.h * self.eta * self.omega_rev)
@@ -39,6 +39,8 @@ class Params:
             config = yaml.safe_load(f)
         self.epsilon = config["epsilon"]
         self.nu_m = config["nu_m"]
+        self.sigma = config.get("sigma", 1.0)
+
 
         # ------------- variables -----------------
         self.omega_m = self.nu_m * self.omega_s
@@ -60,7 +62,3 @@ class Params:
 # par_fcc = params.ParamsFCC()
 # par_fcc.gamma = nuovo_valore
 # par_fcc.update_dependent()
-
-
-print(1 / (2 * Params().damp_rate))
-print(2 / Params().dt)

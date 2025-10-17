@@ -5,10 +5,10 @@ import random
 from scipy.special import ellipk
 import matplotlib.pyplot as plt
 
-import params
+import params_fcc
 import functions as fn
 
-par = params.Params()
+par = params_fcc.Params()
 
 def generate_grid(grid_lim, n_particles):
     #X = np.linspace(-0.01, grid_lim, n_particles)
@@ -36,12 +36,14 @@ def generate_grid(grid_lim, n_particles):
     Q = Q_list
     P = P_list 
 
-    #print(Q)
-
     phi, delta = fn.compute_phi_delta(Q, P)
     phi = np.mod(phi, 2 * np.pi) 
     q_init = phi
     p_init = delta
+
+    ps = np.load("./action_angle/phasespace_a0.050_nu0.80_extra_fcc.npz")
+    x_ps = ps["x"]
+    y_ps = ps["y"]
 
     return q_init, p_init
 
@@ -86,8 +88,8 @@ def generate_circle(radius, n_particles):
 
     return q_init, p_init
 
-def generate_gaussian(sigma, n_particles, x_center, x_min, x_max, y_min, y_max):
-    ps = np.load("./action_angle/phasespace_a0.050_nu0.80_extra.npz")
+def generate_gaussian(sigma, n_particles, x_center=0, x_min=-2, x_max=2, y_min=-2, y_max=2):
+    ps = np.load("./action_angle/phasespace_a0.050_nu0.80_extra_fcc.npz")
     x_ps = ps["x"]
     y_ps = ps["y"]
 
@@ -122,9 +124,11 @@ def generate_gaussian(sigma, n_particles, x_center, x_min, x_max, y_min, y_max):
     action = np.array(action_list[:n_particles])
     theta = np.array(theta_list[:n_particles])
 
-    plt.scatter(X_list, Y_list, s=1)
-    plt.scatter(x_ps, y_ps, s=2)
-    plt.show()
+    #plt.scatter(x_ps, y_ps, s=1)
+    #plt.scatter(X_list, Y_list, s=2)
+    #plt.title(par.sigma)
+    #plt.axis("square")
+    #plt.show()
 
     kappa_squared_list = np.empty(n_particles)
     Omega_list = np.empty(n_particles)
@@ -154,6 +158,16 @@ def load_data(filename):
     q = data['q']
     p = data['p']
 
+    ps_qp = np.load("./integrator/evolved_qp_phasespace.npz")
+    q_ps = ps_qp["q"]
+    p_ps = ps_qp["p"]
+
+    p = p - np.min(p) + 0.027
+
+    #plt.scatter(q_ps, p_ps)
+    #plt.scatter(q, p, s=1)
+    #plt.show()
+
     q_init = np.array(q)
     p_init = np.array(p)
 
@@ -166,16 +180,18 @@ def load_data(filename):
 if __name__ == "__main__":
     grid_lim = float(sys.argv[1])
     n_particles = int(sys.argv[2])
-    loaded_data = sys.argv[3] if len(sys.argv) > 3 else None
+    loaded_data = sys.argv[3] if len(sys.argv) > 3 else None   
+
+    var = par.sigma 
 
     if loaded_data is not None:
         q_init, p_init = load_data(loaded_data)
     else:
         #q_init, p_init = generate_grid(grid_lim, n_particles) 
         #q_init, p_init = generate_circle(grid_lim, n_particles)
-        q_init, p_init = generate_gaussian(grid_lim, n_particles, 10, 8, 10.5, -5, 5)    #ALS
-        #q_init, p_init = generate_gaussian(grid_lim, n_particles, 2.5, 2, 2.9, -1, 1)    #FCC
-
+        #q_init, p_init = generate_gaussian(grid_lim, n_particles, 10, 8, 10.5, -5, 5)    #ALS island
+        #q_init, p_init = generate_gaussian(grid_lim, n_particles, 2.5, 2, 2.9, -1, 1)    #FCC island
+        q_init, p_init = generate_gaussian(grid_lim, n_particles)    #FCC center
 
     output_dir = "init_conditions"
     if not os.path.exists(output_dir):
