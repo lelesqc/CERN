@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import scipy
 import matplotlib.pyplot as plt
-import alphashape
+#import alphashape
 
 import functions as fn
 import params_fcc
@@ -11,7 +11,7 @@ par = params_fcc.Params()
 
 def plot(mode):
     if mode == "evolution":
-        data = np.load(f"action_angle/{mode}_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}_{par.sigma}.npz")
+        data = np.load(f"action_angle/{mode}_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}_{par.sigma:.3f}.npz")
         integrator = np.load("integrator/evolved_qp_evolution.npz")
 
         x = data["x"]
@@ -44,7 +44,7 @@ def plot(mode):
         # opzionale: mostra i numeri sul grafico
         info = f"total={total}\nx>0.5={n_gt}\nx<0.5={n_lt}"
 
-        np.savez(f"./infos/trapping_results_{par.sigma}.npz")
+        np.savez(f"./infos/trapping_results_{par.sigma:.3f}.npz", trap=n_gt, center=n_lt)
         plt.annotate(info, xy=(0.98, 0.02), xycoords="axes fraction",
                      ha="right", va="bottom", fontsize=9,
                      bbox=dict(boxstyle="round", fc="white", alpha=0.8))

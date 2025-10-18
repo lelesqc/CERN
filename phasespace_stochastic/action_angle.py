@@ -48,7 +48,7 @@ def run_action_angle(mode):
                 x[i, j] = np.sqrt(2 * action) * np.cos(theta)
                 y[i, j] = - np.sqrt(2 * action) * np.sin(theta) * np.sign(q[i, j]-np.pi)
 
-    """    mask[i] = (x[i, :] + 0.2)**2 + y[i, :]**2 > 1.8**2
+    r"""    mask[i] = (x[i, :] + 0.2)**2 + y[i, :]**2 > 1.8**2
         q_masked = q[i, :][mask[i]]
         p_masked = p[i, :][mask[i]]
         energies = np.mean(fn.hamiltonian(q_masked, p_masked, par))
@@ -88,5 +88,5 @@ if __name__ == "__main__":
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    file_path = os.path.join(output_dir, f"{mode}_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}_{par.sigma}.npz")
+    file_path = os.path.join(output_dir, f"{mode}_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}_{par.sigma:.3f}.npz")
     np.savez(file_path, x=x, y=y, actions_list=actions_list)

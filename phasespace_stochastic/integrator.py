@@ -85,7 +85,7 @@ def run_integrator(mode, n_particles):
         avg_energies /= par.omega_rev
         variances = variances[:sec_count]
 
-        """times = np.linspace(0, par.t - par.dt, sec_count)
+        r"""times = np.linspace(0, par.t - par.dt, sec_count)
         plt.scatter(times, avg_energies, s=1)
         plt.xlabel("Time [s]")
         plt.ylabel(r"$\mathcal{H} / \omega_\text{rev}$")

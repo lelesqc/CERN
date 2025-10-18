@@ -25,7 +25,7 @@ class Params:
         self.damp_rate = self.U_0 / self.T_rev / self.E_s    # alpha_E
         self.beta = np.sqrt(1 - 1/self.gamma**2)
         self.N = 100
-        self.N_turn = 300    # circa 10 volte il damping time
+        self.N_turn = 150    # circa 10 volte il damping time
         self.phi_0 = 0.0
         self.e = 1
         self.lambd = np.sqrt(self.h * self.eta * self.omega_rev)
