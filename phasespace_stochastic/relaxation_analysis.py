@@ -16,19 +16,21 @@ from tqdm.auto import tqdm
 from scipy.integrate import trapezoid
 
 import params as par_als
-import params as par_fcc
+import params_fcc as par_fcc
 import functions as fn
 
 import warnings
 warnings.filterwarnings("ignore")
 
-parameters = par_fcc
-par_type = "fcc" if parameters is par_fcc else "als"
+parameters = par_als
+par_type = "als" if parameters is par_als else "fcc"
 
 par = parameters.Params()
 
-param_names = ["h", "gamma", "radius"]
-params = [par.h, par.gamma, par.radius]
+#param_names = ["h", "gamma", "radius", "omega_rev"]
+#params = [par.h, par.gamma, par.radius, par.omega_rev]
+param_names = ["h", "gamma", "omega_rev"]
+params = [par.h, par.gamma, par.omega_rev]
 temps_dict = {}
 all_th = []
 all_emp = []
@@ -37,7 +39,7 @@ all_emp_std = []
 for name, default_val in zip(param_names, params):
     par = parameters.Params()
     
-    par_vals = np.linspace(default_val / 10, default_val * 10, 10)
+    par_vals = np.linspace(default_val / 10, default_val * 10, 5)
     par_vals = np.append(par_vals, default_val)
     par_vals = np.sort(par_vals)
 
@@ -55,12 +57,13 @@ for name, default_val in zip(param_names, params):
         setattr(par, name, val)
         par.update_dependent()
 
-        print(par.h, par.gamma, par.radius, "eta: ", f"{par.eta:.8f}")
+        print(par.h, par.gamma, par.radius, par.omega_rev)
+        #print(par.h, par.omega_rev")
 
         init_data = np.load("./init_conditions/qp_10000.npz")
 
-        q = init_data["q"]
-        p = init_data["p"]
+        q = init_data["q"][::10]
+        p = init_data["p"][::10]
 
         psi = 0
         par.t = 0
@@ -87,19 +90,18 @@ for name, default_val in zip(param_names, params):
         p = p_sec
 
         # shape di q e p: (n_punti, n_particelle)
-
-        energies = []
         
-        h_0 = fn.H0_for_action_angle(q, p, par)
+        h_0 = fn.hamiltonian(q, p, par)
         energies = h_0
 
         E0 = fn.hamiltonian(np.pi, 0, par)
-        noise_D = (par.gamma / par.beta**2 * np.sqrt(2 * par.damp_rate * par.h * par.eta * par.Cq / par.radius))**2
-        damping_factor = 2 * par.damp_rate / par.beta**2
-        temperature = noise_D / (2 * damping_factor)
+        damp_factor = 2 * par.damp_rate / par.beta**2
+        m = 1 / (par.h * par.eta * par.omega_rev)
+        temperature = par.gamma**2 * par.h * par.eta * par.omega_rev * par.Cq / (2 * (2 + par.damping_part_number) * par.beta**4 * par.radius)  
+        #D = par.gamma / par.beta**3 * np.sqrt(par.damp_rate * par.Cq / par.radius)
         temps_th.append(temperature)
         temps_emp.append(np.mean(energies - E0))
-        #temps_emp.append(np.var(p))
+        #temps_emp.append(np.var(p) / (2 * m))
         temps_emp_std.append(np.std(energies - E0))
         energies_tot_temp.append(energies)
 
@@ -133,9 +135,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import matplotlib.ticker as ticker
+import params as par
 
 dir_data = "./stochastic_studies/temperatures"
-par_type = "fcc"
+par_type = "als"
 
 temps_dict = {}
 all_th = []
@@ -151,6 +154,9 @@ for root, dirs, files in os.walk(dir_data):
             temps_th = np.array(data["temps_th"])
             temps_emp = np.array(data["temps_emp"])
             #temps_emp_std = np.array(data["temps_emp_std"])
+
+            #if param_name in ["gamma"]:
+            #    continue
 
             temps_dict[param_name] = {
                 "temps_th": data["temps_th"],
@@ -183,6 +189,8 @@ for i, param_name in enumerate(param_names):
     temps_th = np.array(temps_dict[param_name]["temps_th"])
     temps_emp = np.array(temps_dict[param_name]["temps_emp"])
     #temps_emp_std = np.array(temps_dict[param_name]["temps_emp_std"])
+    #if param_name in ["gamma"]:
+    #    continue
 
     #plt.errorbar(temps_th, temps_emp, yerr=temps_emp_std / np.sqrt(n_particles), fmt='o', color=cmap(i), markersize=2, capsize=4, alpha=1)
     plt.scatter(temps_th, temps_emp, color=cmap(i), label=param_name, s=14, alpha=1.0)
@@ -200,6 +208,9 @@ plt.xscale("log")
 plt.yscale("log")
 plt.legend()
 plt.show()
+
+for idx in range(10):
+    print(f"{all_th[idx]:.3f}, {all_emp[idx]:.3f}")
 
 # %%
 

@@ -1,25 +1,26 @@
 import os
+import importlib
 import sys
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-import params_fcc
 import functions as fn
 
-par = params_fcc.Params()
+params_module = os.environ.get("PARAMS_MODULE")
+params = importlib.import_module(params_module)
+par = params.Params()
 
-def run_integrator(mode, n_particles):
-    data = np.load(f"init_conditions/qp_{n_particles}.npz")
+machine = os.environ.get("MACHINE").lower()
 
-    q_init = data['q']
-    p_init = data['p']
+def run_integrator(init_type, mode, n_particles):
+    data = np.load(f"init_conditions/init_qp_{n_particles}_{init_type}_{machine}.npz")
+
+    q_init = data["q"]
+    p_init = data["p"]
 
     q = np.copy(q_init)
     p = np.copy(p_init)
-
-    avg_energies = np.zeros(par.n_steps)
-    variances = np.zeros(par.n_steps)
 
     psi = par.phi_0
 
@@ -40,12 +41,9 @@ def run_integrator(mode, n_particles):
             psi_final=1
             time_final=1
             if np.cos(psi) > 1.0 - 1e-3:
-                q_traj[sec_count, :] = q
-                p_traj[sec_count, :] = p
-                energies = np.mean(fn.hamiltonian(q, p, par))
-                avg_energies[sec_count] = energies
-                variances[sec_count] = np.var(p)
-
+                q_traj[sec_count, :] = np.copy(q)
+                p_traj[sec_count, :] = np.copy(p)
+            
                 sec_count += 1
                 
             if step_count == quarter:
@@ -56,7 +54,6 @@ def run_integrator(mode, n_particles):
                 print("tre quarti") 
             
             step_count += 1
-
 
         elif mode == "evolution":
             if np.cos(psi) > 1.0 - 1e-3: 
@@ -81,28 +78,10 @@ def run_integrator(mode, n_particles):
     if mode == "phasespace":
         q = q_traj[:sec_count, :]
         p = p_traj[:sec_count, :]
-        avg_energies = avg_energies[:sec_count]
-        avg_energies /= par.omega_rev
-        variances = variances[:sec_count]
-
-        r"""times = np.linspace(0, par.t - par.dt, sec_count)
-        plt.scatter(times, avg_energies, s=1)
-        plt.xlabel("Time [s]")
-        plt.ylabel(r"$\mathcal{H} / \omega_\text{rev}$")
-        plt.show()
-
-        plt.scatter(times, variances, s=1)
-        plt.xlabel("Time [s]")
-        plt.ylabel("Variance")
-        plt.yscale("log")
-        plt.savefig("../results/island/variance_vs_time")
-        plt.show()"""
-
+        
     elif mode == "evolution":
         q = np.copy(q_last)
         p = np.copy(p_last)
-
-        print(par.sigma)
 
     return q, p, psi_final, time_final
 
@@ -111,13 +90,16 @@ def run_integrator(mode, n_particles):
 
 
 if __name__ == "__main__":
-    mode = sys.argv[1]
-    n_particles = sys.argv[2]
-    q, p, psi, time = run_integrator(mode, n_particles)
+    machine = os.environ.get("MACHINE").lower()
+
+    init_type = sys.argv[1]
+    mode = sys.argv[2]
+    n_particles = sys.argv[3]
+    q, p, psi, time = run_integrator(init_type, mode, n_particles)
 
     output_dir = "integrator"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    file_path = os.path.join(output_dir, f"evolved_qp_{mode}.npz")
+    file_path = os.path.join(output_dir, f"{mode}_qp_{n_particles}_{machine}.npz")
     np.savez(file_path, q=q, p=p, psi=psi, time=time)

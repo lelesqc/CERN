@@ -159,10 +159,7 @@ E0 = fn.hamiltonian(np.pi, 0, par)
 
 # TEMPERATURA
 
-noise_D = (par.gamma / par.beta**2 * np.sqrt(2 * par.damp_rate * par.h * par.eta * par.Cq / par.radius))**2
-damping_factor = 2 * par.damp_rate / par.beta**2
-temperature = noise_D / (2 * damping_factor)
-
+temperature = par.gamma**2 * par.h * par.eta * par.omega_rev * par.Cq / (2 * (2 + par.damping_part_number) * par.beta**4 * par.radius)  
 print(temperature)
 
 
@@ -170,6 +167,7 @@ print(temperature)
 
 
 chi2_tot = []
+dof = 98
 
 #actions = areas / (2 * np.pi)
 
@@ -190,13 +188,13 @@ for i in range(n_times):
     bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
 
     # curva teorica
-    P_H = np.exp(- (np.interp(bin_centers, actions_sorted_i, energies_i) - E0) / (par.k_lele_als * temperature))
+    P_H = np.exp(- (np.interp(bin_centers, actions_sorted_i, energies_i) - E0) / (temperature))
     Z = trapezoid(P_H, bin_centers)           
     P_H /= Z 
 
     epsilon = 1e-16
 
-    chi2 = np.sum((hist - P_H)**2 / (P_H + epsilon))
+    chi2 = np.sum((hist - P_H)**2 / (P_H + epsilon)) / dof
     chi2_tot.append(chi2)
 
     #plt.hist(actions[i, :], bins=100, density=True, alpha=0.5, label="Empirico")
@@ -204,9 +202,10 @@ for i in range(n_times):
     #plt.legend()
     #plt.show()
 
+
 plt.hist(actions[-1, :], bins=100, density=True, alpha=0.5, label="Distr. of actions")
 plt.plot(bin_centers, P_H, label="Boltz. distribution")
-plt.title(rf"$\chi^2$: {chi2:.2f}")
+plt.title(rf"Reduced $\chi^2$: {chi2:.2f}")
 plt.legend()
 plt.xlabel("Actions")
 plt.ylabel("Frequency")
@@ -217,6 +216,6 @@ timez = np.linspace(0, times[-2], len(chi2_tot))
 plt.scatter(timez, chi2_tot, s=2)
 plt.xlabel("Time [s]")
 plt.yscale("log")
-plt.ylabel(r"$\chi^2$")
+plt.ylabel(r"Reduced $\chi^2$")
 
 # %%

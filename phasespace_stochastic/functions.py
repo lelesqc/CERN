@@ -1,13 +1,14 @@
 import numpy as np
+import os
+import importlib
 from scipy.optimize import brentq
 from scipy.special import ellipk, ellipe
 from sage.functions.jacobi import inverse_jacobi, jacobi
 import matplotlib.pyplot as plt
-from scipy import stats
 
-import params_fcc
-
-par = params_fcc.Params()
+params_module = os.environ.get("PARAMS_MODULE")
+params = importlib.import_module(params_module)
+par = params.Params()
 
 # ------------------ functions -------------------------
 
@@ -24,22 +25,12 @@ def compute_action_angle(kappa_squared, P):
     
     u = inverse_jacobi('cn', float(x), float(kappa_squared))
     theta = (Omega / par.A) * u
-    #theta = 1
     return action, theta
     
 def dV_dq(q, par): 
     return par.A**2 * np.sin(q) 
 
 def Delta_q(p, psi, t, dt, par):
-    #print(f"{t:.3f}, {np.cos(psi)}, {par.a_lambda(t):.5f}, {par.omega_lambda(t)/par.omega_s:.5f}")
-    val_q0 = par.damp_rate
-    val_dq = dt * 2 * par.damp_rate * p[0] / par.beta**2
-
-    if np.isnan(val_q0) or np.isnan(val_dq):
-        print("NaN detected! q[0]:", val_q0, "Delta_q[0]:", val_dq, )
-        import sys; sys.exit(1)  # Ferma l'esecuzione
-
-    #print(val_q0, val_dq)
     return par.lambd**2 * p * dt + par.a * par.omega_m * np.cos(psi) * dt
 
 def hamiltonian(q, p, par):
@@ -64,7 +55,19 @@ def compute_phi_delta(Q, P):
     return phi, delta
 
 def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq, par):
-    #par.damp_rate=0
+    sigma = getattr(par, "sigma", 1.0)
+
+    q += Delta_q(p, psi, t, dt/2, par)
+    q = np.mod(q, 2 * np.pi)        
+    t_mid = t + dt/2
+    p += dt * dV_dq(q, par) - dt * 2 * par.damp_rate * p / par.beta**2 + np.sqrt(dt) * par.D * np.random.normal(0, sigma, size=p.shape) 
+    q += Delta_q(p, psi, t_mid, dt/2, par)
+    q = np.mod(q, 2 * np.pi)     
+
+    return q, p
+
+"""def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq, par):
+    par.damp_rate=0
     noise_factor = par.gamma / par.beta**2 * np.sqrt(2 * par.damp_rate * par.h * par.eta * par.Cq / par.radius)
     sigma = getattr(par, "sigma", 1.0)
     #noise_factor = 0
@@ -77,7 +80,7 @@ def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq, par):
     q += Delta_q(p, psi, t_mid, dt/2, par)
     q = np.mod(q, 2 * np.pi)     
 
-    return q, p
+    return q, p"""
 
 def find_h0_numerical(I_target):
     def G_objective(h0_val):

@@ -1,0 +1,101 @@
+TRAFILETTI = 1
+# per trovare traiettoria separatrici:
+"""i_max, j_max = np.unravel_index(np.argmax(x, axis=None), x.shape)
+# j_max è l'indice della particella (seconda dimensione)
+print("step:", i_max, "particle:", j_max, "x_max:", x[i_max, j_max])
+
+xy_j = np.vstack((x[:, j_max], y[:, j_max])).T    
+hull_j = alphashape.alphashape(xy_j, alpha=0.05)
+area_island = hull_j.area
+print("area:", area_island)
+
+if hull_j is not None:
+    if hasattr(hull_j, "geoms"):  # MultiPolygon
+        for geom in hull_j.geoms:
+            x_hull, y_hull = geom.exterior.xy
+            plt.plot(x_hull, y_hull, c="r", label="Hull")
+    else:  # Polygon
+        x_hull, y_hull = hull_j.exterior.xy
+        plt.plot(x_hull, y_hull, c="r", label="Hull")
+
+plt.show()
+plt.scatter(x, y, s=0.5)
+plt.show()"""
+
+# per contare particelle
+"""count_island = []
+count_center = []
+for i in range(x.shape[0]):
+    count_island.append(int(np.count_nonzero(x[i, :] > 0.8)))
+    count_center.append(int(np.count_nonzero(x[i, :] < 0.8)))
+
+times = np.linspace(0, par.dt * par.n_steps, len(count_island))
+#mask = (times >= 0.48) & (times <= 0.9) 
+
+count_island = np.array(count_island)
+count_center = np.array(count_center)
+
+print(par.dt * par.n_steps)
+
+plt.plot(times, count_island, label="Island")
+plt.plot(times, count_center, "r--", c="grey", alpha=0.5, label="Center")
+plt.xlabel("Time [s]")
+plt.ylabel("Population")
+plt.legend()
+#plt.savefig("../results/resonance11/trapping_comparisons/populations_vs_time")
+plt.show()""" 
+
+# altro per contare
+"""
+n_gt = int(np.count_nonzero(x > 0.5))
+n_lt = int(np.count_nonzero(x < 0.5))
+n_eq = int(np.count_nonzero(x == 0.5))
+total = x.size
+
+print(f"Particles: total={total}, x>0.5={n_gt}, x<0.5={n_lt}, x==0.5={n_eq}")
+
+info = f"total={total}\nx>0.5={n_gt}\nx<0.5={n_lt}"
+
+np.savez(f"./infos/trapping_results_{par.sigma:.3f}.npz", trap=n_gt, center=n_lt)
+plt.annotate(info, xy=(0.98, 0.02), xycoords="axes fraction",
+                ha="right", va="bottom", fontsize=9,
+                bbox=dict(boxstyle="round", fc="white", alpha=0.8))
+plt.scatter(x_ps, y_ps, s=1, label="Phase space")
+plt.scatter(x, y, s=1, label="Distribution")
+plt.legend()
+plt.xlabel("X")
+plt.ylabel("Y")
+plt.axis("square")
+plt.savefig(f"../results/resonance11/phasespaces/ps_a0.050_nu0.80_sigma_{par.sigma:.3f}.png")
+#plt.close()
+#plt.show()
+"""
+
+# per fittare l'esponenziale dei tempi di rilassamento
+"""from scipy.optimize import curve_fit
+
+def exp_decay(t, N0, tau, C):
+    return N0 * np.exp(-t / tau) + C
+
+# Dati da fittare
+ydata = count_island[mask]
+xdata = np.linspace(0, 0.42, ydata.shape[0])
+
+# Stima iniziale dei parametri: N0, tau, C
+p0 = [ydata[0], 0.1, ydata[-1]]
+
+# Fit
+popt, pcov = curve_fit(exp_decay, xdata, ydata, p0=p0)
+N0_fit, tau_fit, C_fit = popt
+
+# Plot dati e fit
+plt.plot(xdata, ydata, '.', label="Data")
+plt.plot(xdata, exp_decay(xdata, *popt), 'r-', label=fr"Fit: $\tau$ = {tau_fit:.3f} s")
+plt.xlabel("Time [s]")
+plt.ylabel("Population")
+plt.legend()
+plt.title("Island population")
+#plt.savefig("../results/resonance11/trapping_comparisons/exp_fit_island_population")
+plt.show()
+
+print(f"Tempo di rilassamento (tau): {tau_fit:.4f} s")"""
