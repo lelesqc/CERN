@@ -1,32 +1,34 @@
 import numpy as np
 import yaml
+import os     
 
 # ------------ machine ----------------
 
-full_radius = 31.32
-h = 328
+bending_radius = 14430 
+h = 130000
 C_gamma = 8.85e-5    # m * GeV^-3
-nu_s = 0.0075
-omega_rev = 9519977.738150887
-V = 1.5e6
-radius = 4.01
+nu_s = 0.025
+T_rev = 302.54e-6
+V = 0.1e9
+radius = 10.76e3
 mc2 = 0.511e6
-gamma_transition = 26.44
-momentum_compaction = 1 / gamma_transition**2
-damping_part_number = momentum_compaction * full_radius / radius
-gamma = 2935.42
+gamma = 89236.8
+momentum_compaction = 14.8e-6 
+damping_part_number = momentum_compaction * bending_radius / radius
 E_s = gamma * mc2
-eta = 1/gamma_transition**2 - 1/gamma**2
-U_0 = C_gamma * (1e-9)**3 * E_s**4 / radius
-T_rev = 2 * np.pi / omega_rev    
+#eta = 14.8e-6
+eta = momentum_compaction - 1/gamma**2
+U_0 = 0.039e9
+#U_0 = C_gamma * (1e-9)**3 * E_s**4 / radius
+
+omega_rev = 2 * np.pi / T_rev
 
 # -------------- model -----------------
 
 damp_rate = U_0 / (2 * T_rev * E_s) * (2 + damping_part_number)
 beta = np.sqrt(1 - 1/gamma**2)
 N = 100
-N_turn = 900   # 20 volte il damping time
-#N_turn = 1000
+N_turn = 300  # circa 20 volte il damping time
 phi_0 = 0.0
 e = 1
 lambd = np.sqrt(h * eta * omega_rev)
@@ -35,10 +37,10 @@ A = omega_s / lambd
 Cq = 3.83e-13
 D = gamma / beta**3 * np.sqrt(damp_rate * Cq / radius)
 D = 0
-damp_rate=0
+damp_rate = 0
 temperature = gamma**2 * h * eta * omega_rev * Cq / (2 * (2 + damping_part_number) * beta**4 * radius) 
 
-# -------------- YAML ------------------ 
+# -------------- YAML ------------------
 
 config_path = "params.yaml"
 
@@ -92,12 +94,12 @@ epsilon = lambda t: (
 
 a_lambda = lambda t: epsilon(t) / (omega_lambda(t)/omega_s)
 
-
-"""omega_lambda = lambda t: omega_m_f
+#a_lambda = lambda t: 0
+"""
+omega_lambda = lambda t: omega_m_f
 epsilon_function = lambda t: (
     epsilon_i + Delta_eps * (t / T_tot)
     if t < T_tot
     else epsilon_f)
 
 a_lambda = lambda t: epsilon_function(t) / (omega_lambda(t)/omega_s)"""
-#a_lambda = lambda t: 0

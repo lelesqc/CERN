@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from tqdm.auto import tqdm
 
-import params as par
+import params_fcc as par
 import functions as fn
 
 def run_action_angle(poincare_mode):
@@ -57,11 +57,16 @@ def run_action_angle(poincare_mode):
                 theta_list.append(theta)
                 sign_list.append(np.sign(q[i]-np.pi))
 
+            if kappa_squared > 1:
+                print(r"Watch out! Particle with $\kappa > 1$")
+
         actions_list = np.array(actions_list)
         theta_list = np.array(theta_list)
 
         x = np.sqrt(2 * np.array(actions_list)) * np.cos(theta_list)
         y = - np.sqrt(2 * np.array(actions_list)) * np.sin(theta_list) * np.array(sign_list)
+
+        print(x.shape)
 
     return x, y, actions_list
 
