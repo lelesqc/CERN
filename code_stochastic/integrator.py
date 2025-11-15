@@ -3,11 +3,11 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-import params_fcc as par
+import params as par
 import functions as fn
 
-def run_integrator(poincare_mode):
-    data = np.load("init_conditions/init_distribution.npz")
+def run_integrator(poincare_mode, idx_start, idx_end):
+    data = np.load(f"init_conditions/init_distribution_{idx_start}_{idx_end}.npz")
     #data_evolved = np.load("integrator/evolved_qp_last_relaxed_fcc.npz")
     #time = data_evolved["t_final"]
     #psi = data_evolved["psi"]
@@ -22,8 +22,8 @@ def run_integrator(poincare_mode):
     p_single = None
 
     if poincare_mode != "last":
-        q_sec = np.empty((par.n_steps + 1, *q.shape), dtype=np.float32)
-        p_sec = np.empty((par.n_steps + 1, *p.shape), dtype=np.float32)
+        q_sec = np.empty((par.n_steps + 1, *q.shape), dtype=np.float16)
+        p_sec = np.empty((par.n_steps + 1, *p.shape), dtype=np.float16)
 
     sec_count = 0
     avg_energies = []
@@ -90,9 +90,9 @@ def run_integrator(poincare_mode):
     q = np.array(q)
     p = np.array(p)
 
-    #np.savez("./init_conditions/relaxed_qp_fcc.npz", q=q, p=p)
+    #np.savez("./init_conditions/relaxed_qp_als.npz", q=q, p=p)
     
-    return q, p, psi_list, times_list
+    return q, p, psi_list, t_final
 
 
 # --------------- Save results ----------------
@@ -100,11 +100,13 @@ def run_integrator(poincare_mode):
 
 if __name__ == "__main__":
     poincare_mode = sys.argv[1]
-    q, p, psi, t_list = run_integrator(poincare_mode)
+    idx_start = int(sys.argv[2])
+    idx_end = int(sys.argv[3])
+    q, p, psi, t_list = run_integrator(poincare_mode, idx_start, idx_end)
 
     output_dir = "integrator"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    file_path = os.path.join(output_dir, f"evolved_qp_{poincare_mode}.npz")
+    file_path = os.path.join(output_dir, f"evolved_qp_{poincare_mode}_{idx_start}_{idx_end}.npz")
     np.savez(file_path, q=q, p=p, psi=psi, t_list=t_list)

@@ -7,7 +7,7 @@ full_radius = 31.32
 h = 328
 C_gamma = 8.85e-5    # m * GeV^-3
 nu_s = 0.0075
-omega_rev = 9519977.738150887
+omega_rev = 1.52e6
 V = 1.5e6
 radius = 4.01
 mc2 = 0.511e6
@@ -25,7 +25,7 @@ T_rev = 2 * np.pi / omega_rev
 damp_rate = U_0 / (2 * T_rev * E_s) * (2 + damping_part_number)
 beta = np.sqrt(1 - 1/gamma**2)
 N = 100
-N_turn = 900   # 20 volte il damping time
+#N_turn = 30000   # 20 volte il damping time
 #N_turn = 1000
 phi_0 = 0.0
 e = 1
@@ -58,10 +58,20 @@ Delta_omega = (nu_m_f - nu_m_i) * omega_s
 
 # ------------- variables -----------------
 
+b_target = 0.005
+f1 = 0.1
+f2 = 0.9
+
 T_s = 2 * np.pi / omega_s
 dt = T_s / N
 T_mod = 2 * np.pi / omega_m_f
 steps = int(round(T_mod / dt))
+
+if np.abs(nu_m_f - nu_m_i) < 0.01:
+    N_turn = int(round((0.025 * N) / (2 * np.pi * f1 * b_target * steps)))
+else:
+    N_turn = int(round(np.abs(nu_m_f - nu_m_i) * N * omega_s) / (2 * np.pi * f2 * b_target * steps))
+    
 n_steps = steps * N_turn
 
 t = 0.0

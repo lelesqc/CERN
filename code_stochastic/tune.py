@@ -2,7 +2,7 @@ import os
 import numpy as np
 from scipy.fft import fft, fftfreq
 
-import params_fcc as par
+import params as par
 
 def tune_calculation():
     a_start = par.a_lambda(par.T_percent)

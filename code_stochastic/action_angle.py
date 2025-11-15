@@ -3,11 +3,11 @@ import sys
 import numpy as np
 from tqdm.auto import tqdm
 
-import params_fcc as par
+import params as par
 import functions as fn
 
-def run_action_angle(poincare_mode):
-    data = np.load(f"integrator/evolved_qp_{poincare_mode}.npz")
+def run_action_angle(poincare_mode, idx_start, idx_end):
+    data = np.load(f"integrator/evolved_qp_{poincare_mode}_{idx_start}_{idx_end}.npz")
 
     q = data['q']
     p = data['p']
@@ -66,8 +66,6 @@ def run_action_angle(poincare_mode):
         x = np.sqrt(2 * np.array(actions_list)) * np.cos(theta_list)
         y = - np.sqrt(2 * np.array(actions_list)) * np.sin(theta_list) * np.array(sign_list)
 
-        print(x.shape)
-
     return x, y, actions_list
 
 
@@ -76,7 +74,9 @@ def run_action_angle(poincare_mode):
 
 if __name__ == "__main__":
     poincare_mode = sys.argv[1]
-    x, y, actions_list = run_action_angle(poincare_mode)
+    idx_start = int(sys.argv[2])
+    idx_end = int(sys.argv[3])
+    x, y, actions_list = run_action_angle(poincare_mode, idx_start, idx_end)
 
     a_start = par.a_lambda(par.T_percent)
     omega_start = par.omega_lambda(par.T_percent)
@@ -84,15 +84,15 @@ if __name__ == "__main__":
     omega_end = par.omega_lambda(par.T_tot)
     
     a_start_str = f"{a_start:.3f}"
-    omega_start_str = f"{omega_start:.2f}"
+    omega_start_str = f"{omega_start:.7f}"
     a_end_str = f"{a_end:.3f}"
-    omega_end_str = f"{omega_end:.2f}"
+    omega_end_str = f"{omega_end:.7f}"
 
-    str_title = f"a{a_start_str}-{a_end_str}_nu{float(omega_start_str)/par.omega_s:.2f}-{float(omega_end_str)/par.omega_s:.2f}"
+    str_title = f"a{a_start_str}-{a_end_str}_nu{float(omega_start_str)/par.omega_s:.7f}-{float(omega_end_str)/par.omega_s:.3f}"
 
     output_dir = "action_angle"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    file_path = os.path.join(output_dir, f"{poincare_mode}_{str_title}.npz")
+    file_path = os.path.join(output_dir, f"{poincare_mode}_{str_title}_{idx_start}_{idx_end}.npz")
     np.savez(file_path, x=x, y=y, actions=actions_list)

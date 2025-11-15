@@ -6,7 +6,7 @@ import alphashape
 import os
 from tqdm.auto import tqdm
 
-import params_fcc as par
+import params as par
 import functions as fn
 
 import warnings

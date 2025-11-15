@@ -3,7 +3,7 @@ from scipy.optimize import brentq
 from scipy.special import ellipk, ellipe
 from sage.functions.jacobi import inverse_jacobi, jacobi
 
-import params_fcc as par
+import params as par
 
 # ------------------ functions -------------------------
 
@@ -19,6 +19,7 @@ def compute_action_angle(kappa_squared, P):
     x = P / (2 * np.sqrt(kappa_squared) * par.A)
     
     u = inverse_jacobi('cn', float(x), float(kappa_squared))
+    #u=1
     theta = (Omega / par.A) * u
     return action, theta
 

@@ -6,7 +6,7 @@ import functions as fn
 import matplotlib.pyplot as plt
 from scipy.special import ellipk
 
-import params_fcc as par
+import params as par
 
 def generate_circle(radius, n_particles):
     X_list = np.empty(n_particles)
@@ -103,13 +103,13 @@ def generate_gaussian(sigma, n_particles, x_center, x_min, x_max, y_min, y_max):
 
     return q_init, p_init
 
-def load_data_qp(filename):
+def load_data_qp(filename, idx_start, idx_end):
     data = np.load(filename)
     q = data['q']
     p = data['p']
 
-    q_init = np.array(q)
-    p_init = np.array(p)
+    q_init = np.array(q[idx_start:idx_end])
+    p_init = np.array(p[idx_start:idx_end])
 
     return q_init, p_init
 
@@ -122,18 +122,20 @@ if __name__ == "__main__":
     sigma = float(sys.argv[2])
     n_particles = int(sys.argv[3])
     loaded_data = sys.argv[4] if len(sys.argv) > 4 else None   
+    idx_start = int(sys.argv[5]) if len(sys.argv) > 5 else 0
+    idx_end = int(sys.argv[6]) if len(sys.argv) > 6 else None
 
     if loaded_data is not None:
         #q_init, p_init = load_data_xy(loaded_data)
-        q_init, p_init = load_data_qp(loaded_data)
-    
+        q_init, p_init = load_data_qp(loaded_data, idx_start, idx_end)
+            
     else:
-        #q_init, p_init = generate_circle(radius, n_particles)
-        q_init, p_init = generate_gaussian(sigma, n_particles, 0, -radius, radius, -radius, radius)
+        q_init, p_init = generate_circle(radius, n_particles)
+        #q_init, p_init = generate_gaussian(sigma, n_particles, 0, -radius, radius, -radius, radius)
 
     output_dir = "init_conditions"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    file_path = os.path.join(output_dir, "init_distribution.npz")
+    file_path = os.path.join(output_dir, f"init_distribution_{idx_start}_{idx_end}.npz")
     np.savez(file_path, q=q_init, p=p_init)

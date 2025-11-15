@@ -41,77 +41,59 @@ def altro():
 #%%
 
 import numpy as np
-import matplotlib.pyplot as plt
-import params as par
 import os
-import functions as fn
-from tqdm.auto import tqdm
+import matplotlib.pyplot as plt
 
-data = np.load("integrator/evolved_qp_all_middle.npz")
-q = data["q"][::50, :]
-p = data["p"][::50, :]
-times = data["t_list"]
-psi_list = data["psi"]
+root_dir = "../results/resonance11/trapping_hamiltonian/data"
 
-traj_q = np.zeros((q.shape[0], 100, 10000), dtype=np.float16)
-traj_p = np.zeros((q.shape[0], 100, 10000), dtype=np.float16)
+n_isl_ham = []
+for dirpath, dirnames, filenames in os.walk(root_dir):
+    for fname in filenames:
+        if fname.endswith(".npz"):
+            fpath = os.path.join(dirpath, fname)
+            try:
+                d = np.load(fpath)
+                if "n_isl" in d.files and "n_cen" in d.files:
+                    n_isl_ham.append(d["n_isl"].item()/100 if d["n_isl"].ndim == 0 else d["n_isl"])
+            except Exception:
+                pass
 
-plt.scatter(q, p)
-plt.show
+root_dir = "../results/resonance11/trapping_stochastic/data"
 
-
-for i in tqdm(range(q.shape[0])):
-    psi_now = psi_list[i]
-    t_now = times[i]
-
-    j=0
-
-    q_temp = q[i, :]
-    p_temp = p[i, :]
-
-    while j < 100:
-        q_temp, p_temp = fn.integrator_step(q_temp, p_temp, psi_now, t_now, par.dt, fn.Delta_q, fn.dV_dq)
-
-        if np.cos(psi_now) > 1.0 - 1e-3:
-            traj_q[i, j, :] = np.copy(q_temp)
-            traj_p[i, j, :] = np.copy(p_temp)
-
-            j += 1
-
-        psi_now += par.omega_lambda(t_now) * par.dt
-
-#%%
-
-x = np.zeros((traj_q.shape[0], traj_q.shape[1], traj_q.shape[2]))
-y = np.zeros((traj_q.shape[0], traj_q.shape[1], traj_q.shape[2]))
-
-for j in tqdm(range(0, x.shape[2], 100)):
-    for i in range(x.shape[0]):
-        for k in range(x.shape[1]):
-            h_0 = fn.H0_for_action_angle(traj_q[i, k, j], traj_p[i, k, j])
-            kappa_squared = 0.5 * (1 + h_0 / (par.A**2))
-
-            if 0 < kappa_squared < 1:
-                Q = (traj_q[i, k, j] + np.pi) / par.lambd
-                P = par.lambd * traj_p[i, k, j]
-
-                action, theta = fn.compute_action_angle(kappa_squared, P)
-
-                x[i, k, j] = np.sqrt(2 * action) * np.cos(theta)
-                y[i, k, j] = - np.sqrt(2 * action) * np.sin(theta) * np.sign(traj_q[i, k, j]-np.pi)
-
-x = np.array(x)
-y = np.array(y)
+n_isl_stoc = []
+for dirpath, dirnames, filenames in os.walk(root_dir):
+    for fname in filenames:
+        if fname.endswith(".npz"):
+            fpath = os.path.join(dirpath, fname)
+            try:
+                d = np.load(fpath)
+                if "n_isl" in d.files and "n_cen" in d.files:
+                    n_isl_stoc.append(d["n_isl"].item()/100 if d["n_isl"].ndim == 0 else d["n_isl"])
+            except Exception:
+                print("ksrt")
+                pass
 
 
-#%%
+k = 7
+val = 100.0
+n_isl_ham.extend([val] * k)
 
-plt.scatter(x[10, :, 10], y[10, :, 10])
+print(len(n_isl_stoc))
+print(len(n_isl_ham))
+
+list_idx = np.linspace(0.9597, 0.9637, len(n_isl_ham))
+plt.scatter(list_idx[1:], n_isl_ham[1:], s=10, label="Hamiltonian")
+plt.scatter(list_idx[1:], n_isl_stoc[1:], s=10, label="Stochastic")
+plt.title(r"$\nu_\text{m, f}$ = 0.83")
+plt.xlabel(r"$\nu_\text{m, i}$")
+plt.ylabel("Trapping probability")
+plt.legend()
+#plt.savefig("../results/resonance11/trapping_results/pics/stoc_vs_ham_FCC_Z.png")
 plt.show()
+#np.savez("../results/resonance11/trapping_results/data/stoc_vs_ham_FCC_Z.npz", list_nu_m=list_idx, trap_prob_ham=n_isl_ham, trap_prob_stoc=n_isl_stoc)
 
 #%%
 
 if __name__ == "__main__":
-    #plot_test()
+    plot_test()
     #altro_ancora()
-
