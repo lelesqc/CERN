@@ -6,9 +6,9 @@ import functions as fn
 import matplotlib.pyplot as plt
 from scipy.special import ellipk
 
-import params as par
+import params
 
-def generate_circle(radius, n_particles):
+def generate_circle(radius, n_particles, par):
     X_list = np.empty(n_particles)
     Y_list = np.empty(n_particles)
     kappa_squared_list = np.empty(n_particles)
@@ -47,7 +47,7 @@ def generate_circle(radius, n_particles):
 
     return q_init, p_init
 
-def generate_gaussian(sigma, n_particles, x_center, x_min, x_max, y_min, y_max):
+def generate_gaussian(sigma, n_particles, x_center, x_min, x_max, y_min, y_max, par):
     X_list = []
     Y_list = []
     action_list = []
@@ -103,8 +103,10 @@ def generate_gaussian(sigma, n_particles, x_center, x_min, x_max, y_min, y_max):
 
     return q_init, p_init
 
-def load_data_qp(filename, idx_start, idx_end):
+def load_data_qp(filename, idx_start, idx_end, par):
     data = np.load(filename)
+    fn.par = par
+    
     q = data['q']
     p = data['p']
 
@@ -124,10 +126,12 @@ if __name__ == "__main__":
     loaded_data = sys.argv[4] if len(sys.argv) > 4 else None   
     idx_start = int(sys.argv[5]) if len(sys.argv) > 5 else 0
     idx_end = int(sys.argv[6]) if len(sys.argv) > 6 else None
+    params_path = sys.argv[7] if len(sys.argv) > 7 else "params.yaml"
+    par = params.load_params(params_path)
 
     if loaded_data is not None:
         #q_init, p_init = load_data_xy(loaded_data)
-        q_init, p_init = load_data_qp(loaded_data, idx_start, idx_end)
+        q_init, p_init = load_data_qp(loaded_data, idx_start, idx_end, par)
             
     else:
         q_init, p_init = generate_circle(radius, n_particles)

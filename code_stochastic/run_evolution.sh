@@ -18,12 +18,13 @@ POINCARE_MODE="last"
 
 #echo "Evolving the system..."
 
-IDX_START=$1
-IDX_END=$2
+IDX_START=${1:-0}
+IDX_END=${2:-${PARTICLES}}
+SWEEP_PARAMS=${3:-params.yaml}
 
-python generate_init_conditions.py ${RADIUS} ${SIGMA} ${PARTICLES} ${DATA_FILE} $IDX_START $IDX_END
-python integrator.py ${POINCARE_MODE} $IDX_START $IDX_END
-python action_angle.py ${POINCARE_MODE} $IDX_START $IDX_END
-python plotter.py ${POINCARE_MODE} ${PARTICLES} ${SEC_TO_PLOT} $IDX_START $IDX_END
+python generate_init_conditions.py ${RADIUS} ${SIGMA} ${PARTICLES} ${DATA_FILE} $IDX_START $IDX_END $SWEEP_PARAMS
+python integrator.py ${POINCARE_MODE} $IDX_START $IDX_END $SWEEP_PARAMS
+python action_angle.py ${POINCARE_MODE} $IDX_START $IDX_END $SWEEP_PARAMS
+python plotter.py ${POINCARE_MODE} ${PARTICLES} ${SEC_TO_PLOT} $IDX_START $IDX_END $SWEEP_PARAMS
 
 #echo "Completed."

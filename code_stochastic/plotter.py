@@ -2,11 +2,13 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import functions as fn
-import params as par
+import params
 from scipy.integrate import trapezoid
 from scipy.stats import wasserstein_distance, ks_2samp
 
-def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end):
+def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end, par):
+    fn.par = par
+    
     a_start = par.a_lambda(par.T_percent)
     omega_start = par.omega_lambda(par.T_percent)
     a_end = par.a_lambda(par.T_tot)
@@ -19,7 +21,7 @@ def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end):
 
     str_title = f"a{a_start_str}-{a_end_str}_nu{float(omega_start_str)/par.omega_s:.7f}-{float(omega_end_str)/par.omega_s:.3f}"
 
-    data = np.load(f"action_angle/last_{str_title}_{idx_start}_{idx_end}.npz")
+    data = np.load(f"action_angle/{poincare_mode}_{str_title}_{idx_start}_{idx_end}.npz")
     data_ps = np.load(f"../phasespace_stochastic/action_angle/phasespace_100_a0.050_nu0.83_als.npz")
     data_qp = np.load(f"integrator/evolved_qp_{poincare_mode}.npz")
 
@@ -33,8 +35,7 @@ def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end):
     p = data_qp["p"]
     #t_final = data_qp["t_final"]
 
-    #mask = ((x+0.25)**2 + y**2) > 4.2
-    mask = ((x+0.5)**2 + y**2) > 9     
+    mask = ((x+0.5)**2 + y**2) > 9    # ALS 
     #mask = ((x+0.25)**2 + y**2) > 1.5
 
     """x_rel = x - np.mean(x)
@@ -207,22 +208,25 @@ def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end):
         n_isl = int(np.count_nonzero(mask))
         n_cen = int(np.count_nonzero(~mask))
 
-        plt.scatter(x_cen, y_cen, s=5, alpha=1.0, color='C0', label=f"Center (N={n_cen})")
-        plt.scatter(x_isl, y_isl, s=5, alpha=1.0, color='C1', label=f"Island (N={n_isl})")
-        plt.scatter(x_ps, y_ps, s=1)
-        plt.scatter(x, y, s=3)
-        plt.xlabel("X", fontsize=16)
-        plt.ylabel("Y", fontsize=16)
+        #plt.scatter(x_cen, y_cen, s=5, alpha=1.0, color='C0', label=f"Center (N={n_cen})")
+        #plt.scatter(x_isl, y_isl, s=5, alpha=1.0, color='C1', label=f"Island (N={n_isl})")
+        #plt.scatter(x_ps, y_ps, s=1)
+        #plt.scatter(x, y, s=3)
+        #plt.xlabel("X", fontsize=16)
+        #plt.ylabel("Y", fontsize=16)
+        #plt.show()
+
+        np.savez(f"../results/resonance11/final_results/als/data/damp/{par.nu_m_i:.7f}_{par.nu_m_f:.3f}_{idx_start}_{idx_end}.npz", n_isl=n_isl)
         #plt.xlim(-15, 15)
         #plt.ylim(-15, 15)
-        plt.tick_params(labelsize=18)
-        plt.axis("square")
-        plt.title(rf"Adiabatic trapping for $\nu_m = {par.nu_m_i:.6f} - {par.nu_m_f:.6f}$")
-        plt.savefig(f"../results/resonance11/trapping_hamiltonian/pics/nu_i_{par.nu_m_i:.7f}_nu_f_{par.nu_m_f:.3f}_als.png")
-        plt.close()
-        np.savez(f"../results/resonance11/trapping_hamiltonian/data/nu_i_{par.nu_m_i:.7f}_nu_f_{par.nu_m_f:.3f}_{idx_start}_{idx_end}_als.npz",
-         n_isl=n_isl, n_cen=n_cen)
-        #np.savez(f"../results/resonance11/trapping_hamiltonian/data/nu_i_{par.nu_m_i:.7f}_nu_f_{par.nu_m_f:.3f}_als.npz", n_isl=n_isl, n_cen=n_cen)
+        #plt.tick_params(labelsize=18)
+        #plt.axis("square")
+        #plt.title(rf"Adiabatic trapping for $\nu_m = {par.nu_m_i:.6f} - {par.nu_m_f:.6f}$")
+        #plt.savefig(f"../results/resonance11/trapping_hamiltonian/pics/nu_i_{par.nu_m_i:.7f}_nu_f_{par.nu_m_f:.3f}_als.png")
+        #plt.close()
+        #np.savez(f"../results/resonance11/trapping_stochastic/data/nu_i_{par.nu_m_i:.7f}_nu_f_{par.nu_m_f:.3f}_{idx_start}_{idx_end}_als.npz",
+        # n_isl=n_isl, n_cen=n_cen)
+        #np.savez(f"../results/resonance11/trapping_stochastic/data/nu_i_{par.nu_m_i:.7f}_nu_f_{par.nu_m_f:.3f}_als.npz", n_isl=n_isl, n_cen=n_cen)
         #plt.tight_layout()
         #plt.show()
 
@@ -238,7 +242,7 @@ def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end):
             ax.set_xlabel("X")
             ax.set_ylabel("Y")"""
         
-        actions = np.zeros((q.shape[0], q.shape[1]))
+        """actions = np.zeros((q.shape[0], q.shape[1]))
         L2_list = []
 
         temperature = par.temperature
@@ -327,13 +331,43 @@ def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end):
         axes[2].legend()
 
         plt.tight_layout()
-        plt.show()
+        plt.show()"""
         
 
         """for i in range(0, actions.shape[0], 100):
             plt.hist(actions[i, :], bins=100, density=True)
 
             plt.show()"""
+        
+        thetas = data["theta"]
+        actions = data["actions"]
+        thetaz = thetas[:, 0]
+        actionz = actions[:, 0]
+
+        data_qp = np.load(f"integrator/evolved_qp_{poincare_mode}_{idx_start}_{idx_end}.npz")
+
+        t_final = data_qp["t_list"]
+        print(t_final)
+
+        timez = np.linspace(0, t_final, thetaz.shape[0])
+        psis = []
+        
+        listez = np.linspace(0, t_final, thetaz.shape[0])
+        plt.scatter(timez, thetaz, s=5)
+        plt.ylim(0, 4)
+        plt.show()
+
+        thetaz = thetas[:, 1]
+
+        plt.scatter(timez, thetaz, s=1)
+        plt.show()
+
+        plt.scatter(x_ps, y_ps, s=1)
+        plt.scatter(x[-1, :], y[-1, :], s=1)
+        plt.show()
+
+    
+
 
 def plot_skrt(poincare_mode, n_particles, n_to_plot):
     a_start = par.a_lambda(par.T_percent)
@@ -415,5 +449,7 @@ if __name__ == "__main__":
     n_to_plot = int(sys.argv[3])
     idx_start = int(sys.argv[4])
     idx_end = int(sys.argv[5])
-    
-    plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end)
+    params_path = sys.argv[6] if len(sys.argv) > 6 else "params.yaml"
+    par = params.load_params(params_path)
+
+    plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end, par)

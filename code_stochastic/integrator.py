@@ -3,11 +3,13 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-import params as par
+import params
 import functions as fn
 
-def run_integrator(poincare_mode, idx_start, idx_end):
+def run_integrator(poincare_mode, idx_start, idx_end, params_path):
+    par = params.load_params(params_path)
     data = np.load(f"init_conditions/init_distribution_{idx_start}_{idx_end}.npz")
+    fn.par = par
     #data_evolved = np.load("integrator/evolved_qp_last_relaxed_fcc.npz")
     #time = data_evolved["t_final"]
     #psi = data_evolved["psi"]
@@ -102,7 +104,8 @@ if __name__ == "__main__":
     poincare_mode = sys.argv[1]
     idx_start = int(sys.argv[2])
     idx_end = int(sys.argv[3])
-    q, p, psi, t_list = run_integrator(poincare_mode, idx_start, idx_end)
+    params_path = sys.argv[4] if len(sys.argv) > 4 else "params.yaml"
+    q, p, psi, t_list = run_integrator(poincare_mode, idx_start, idx_end, params_path)
 
     output_dir = "integrator"
     if not os.path.exists(output_dir):

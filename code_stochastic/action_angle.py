@@ -3,11 +3,12 @@ import sys
 import numpy as np
 from tqdm.auto import tqdm
 
-import params as par
+import params
 import functions as fn
 
-def run_action_angle(poincare_mode, idx_start, idx_end):
+def run_action_angle(poincare_mode, idx_start, idx_end, par):
     data = np.load(f"integrator/evolved_qp_{poincare_mode}_{idx_start}_{idx_end}.npz")
+    fn.par = par
 
     q = data['q']
     p = data['p']
@@ -16,6 +17,7 @@ def run_action_angle(poincare_mode, idx_start, idx_end):
         n_steps, n_particles = q.shape
 
         actions_list = np.zeros((n_steps, n_particles))
+        theta_list = np.zeros((n_steps, n_particles))
 
         x = np.zeros((n_steps, n_particles))
         y = np.zeros((n_steps, n_particles))
@@ -31,6 +33,7 @@ def run_action_angle(poincare_mode, idx_start, idx_end):
 
                     action, theta = fn.compute_action_angle(kappa_squared, P)
                     actions_list[i, j] = action 
+                    theta_list[i, j] = theta
 
                     x[i, j] = np.sqrt(2 * action) * np.cos(theta)
                     y[i, j] = - np.sqrt(2 * action) * np.sin(theta) * np.sign(q[i, j]-np.pi)
@@ -38,6 +41,7 @@ def run_action_angle(poincare_mode, idx_start, idx_end):
         x = np.array(x)
         y = np.array(y)
         actions_list = np.array(actions_list)
+        theta_list = np.array(theta_list)
 
     elif poincare_mode in ["first", "last"]:
         actions_list = []
@@ -66,7 +70,7 @@ def run_action_angle(poincare_mode, idx_start, idx_end):
         x = np.sqrt(2 * np.array(actions_list)) * np.cos(theta_list)
         y = - np.sqrt(2 * np.array(actions_list)) * np.sin(theta_list) * np.array(sign_list)
 
-    return x, y, actions_list
+    return x, y, actions_list, theta_list
 
 
 # --------------- Save results ----------------
@@ -76,8 +80,10 @@ if __name__ == "__main__":
     poincare_mode = sys.argv[1]
     idx_start = int(sys.argv[2])
     idx_end = int(sys.argv[3])
-    x, y, actions_list = run_action_angle(poincare_mode, idx_start, idx_end)
-
+    params_path = sys.argv[4] if len(sys.argv) > 4 else "params.yaml"
+    par = params.load_params(params_path)
+    x, y, actions_list, theta_list = run_action_angle(poincare_mode, idx_start, idx_end, par)
+    
     a_start = par.a_lambda(par.T_percent)
     omega_start = par.omega_lambda(par.T_percent)
     a_end = par.a_lambda(par.T_tot)
@@ -95,4 +101,4 @@ if __name__ == "__main__":
         os.makedirs(output_dir)
 
     file_path = os.path.join(output_dir, f"{poincare_mode}_{str_title}_{idx_start}_{idx_end}.npz")
-    np.savez(file_path, x=x, y=y, actions=actions_list)
+    np.savez(file_path, x=x, y=y, actions=actions_list, theta=theta_list)

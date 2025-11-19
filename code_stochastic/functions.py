@@ -3,7 +3,7 @@ from scipy.optimize import brentq
 from scipy.special import ellipk, ellipe
 from sage.functions.jacobi import inverse_jacobi, jacobi
 
-import params as par
+par = None
 
 # ------------------ functions -------------------------
 
@@ -111,3 +111,20 @@ def H_resonant(q, p, x, y, x0, y0, k2):
     psi = np.mod(par.omega_lambda(par.t) * par.t, 2*np.pi)
 
     return H0_for_action_angle(q, p) + par.epsilon_function(par.t) * G_of_I * np.cos(angle - psi) - I * par.omega_lambda(par.t)
+
+def trapping_prob():
+    t_star = 3.2
+    I_res = 0.795
+    k2 = 0.1502
+
+    k_prime = np.sqrt(1 - k2)
+    q_param = np.exp(- np.pi * ellipk(k_prime**2) / ellipk(k2)) 
+    a_prime = (0.05 - 0.025) / (par.T_tot - par.T_percent)
+    alpha = - np.pi**2 / (16 * k2 * (1 - k2)) * (ellipe(k2) - (1-k2)*ellipk(k2)) / (ellipk(k2)**3)
+    omega_prime = (par.omega_lambda(par.T_tot) - par.omega_lambda(par.T_percent)) / (par.T_tot - par.T_percent)
+    eps_prime = a_prime * par.omega_lambda(t_star) + omega_prime * par.a_lambda(t_star)
+    G = 2 * np.pi * par.A / (ellipk(k2) * par.lambd) * np.sqrt(q_param) / (1 + q_param)
+    rad = G / par.epsilon_function(t_star)
+
+    return 4 * np.sqrt(np.abs(alpha)) / (np.pi * np.abs(omega_prime)) * eps_prime * rad
+
