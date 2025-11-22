@@ -24,7 +24,6 @@ def plot_test():
     fig, axes = plt.subplots(2, 3, figsize=(16, 10))
     axes = axes.flatten()
 
-    # Calcola limiti globali per mantenere la stessa scala
     x_min, x_max = np.min(x), np.max(x)
     y_min, y_max = np.min(y), np.max(y)
 
@@ -76,15 +75,6 @@ def load_results():
             if file.endswith(".npz"):
                 data = np.load(os.path.join(root, file))
                 trapping_probs.append(float(data["trapping_prob"]))
-
-    forces = []
-    times = np.linspace(0, par.T_tot, int(round(par.T_tot / par.dt)))
-    for t in times:
-        forces.append(par.omega_lambda(t) * par.a_lambda(t))
-
-    plt.scatter(times, forces)
-    plt.show()
-
 
 if __name__ == "__main__":
     #plot_test()

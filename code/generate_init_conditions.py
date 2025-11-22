@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import ellipk
 
-import params as par
+import params_fcc as par
 import functions as fn
 
 base_dir = os.environ["BASE_DIR"]
@@ -71,5 +71,5 @@ if __name__ == "__main__":
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    file_path = os.path.join(output_dir, "init_distribution.npz")
+    file_path = os.path.join(output_dir, f"init_distribution_{n_particles}.npz")
     np.savez(file_path, q=q_init, p=p_init)

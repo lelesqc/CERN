@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from tqdm.auto import tqdm
 from scipy.special import ellipk
 
-import params as par
+import params_fcc as par
 import functions as fn
 
 base_dir = os.environ["BASE_DIR"]

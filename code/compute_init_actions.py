@@ -5,22 +5,21 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-import params as par
+import params_fcc as par
 import functions as fn
 
 import alphashape
-
 import sys
 
 os.environ["BASE_DIR"] = "/mnt/c/Users/emanu/OneDrive - Alma Mater Studiorum Università di Bologna/CERN_data/code"
 base_dir = os.environ["BASE_DIR"]
 
-starting_data = np.load(base_dir + "/init_conditions/init_distribution.npz")
+starting_data = np.load("../phasespace_stochastic/integrator/evolution_qp_10000_fcc_use_for_relax.npz")
 q_init = starting_data['q']
 p_init = starting_data['p']
 
-idx = 42    #island
-idx = 100    #center
+idx = 0    # center
+idx = 11    # island
 
 q_init_particle = q_init[idx]
 p_init_particle = p_init[idx]
@@ -42,8 +41,8 @@ while par.t < par.T_tot:
     q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq)
 
     if np.cos(psi) > 1.0 - 1e-3:              
-        q_sec[sec_count] = q
-        p_sec[sec_count] = p
+        q_sec[sec_count] = np.copy(q)
+        p_sec[sec_count] = np.copy(p)
         times.append(par.t)
         psi_vals.append(psi)
         sec_count += 1
@@ -51,45 +50,56 @@ while par.t < par.T_tot:
     psi += par.omega_lambda(par.t) * par.dt
     par.t += par.dt
 
-q = q_sec[:sec_count]
-p = p_sec[:sec_count]
 
-np.savez(base_dir + "/actions_stuff/particle_data.npz", q=q, p=p, times=times, psi_vals=psi_vals)    
+jump = 10
+q_f = q_sec[:sec_count][::jump]
+p_f = p_sec[:sec_count][::jump]
+
+times = times[::jump]
+psi_vals = psi_vals[::jump]
+
+#np.savez(base_dir + "/actions_stuff/particle_data.npz", q=q, p=p, times=times, psi_vals=psi_vals)    
+
+plt.scatter(q_f, p_f, s=1)
+plt.show()
 
 
 #%%
 
-inner_traj_q = np.zeros((par.n_steps, len(q)))
-inner_traj_p = np.zeros((par.n_steps, len(p)))
-
-psi_tracker = psi_vals
-
 extra_steps = 1000
 
-for i in tqdm(range(len(q))):
-    q_temp = q[i]
-    p_temp = p[i]
-    psi_temp = psi_tracker[i]
+inner_traj_q = np.zeros((extra_steps, len(q_f)))
+inner_traj_p = np.zeros((extra_steps, len(p_f)))
+
+for i in tqdm(range(len(q_f))):
+    q_temp = q_f[i]
+    p_temp = p_f[i]
+    psi_temp = psi_vals[i]
+    a_fix = par.a_lambda(times[i])
+    omega_m = par.omega_lambda(times[i])
 
     j = 0
     while j < extra_steps:
+        #q_temp, p_temp = fn.integrator_step_fixed(q_temp, p_temp, psi_temp, a_fix, omega_m, par.dt, fn.Delta_q_fixed, fn.dV_dq)
         q_temp, p_temp = fn.integrator_step(q_temp, p_temp, psi_temp, times[i], par.dt, fn.Delta_q, fn.dV_dq)
 
         if np.cos(psi_temp) > 1.0 - 1e-3:
-            inner_traj_q[j, i] = q_temp
-            inner_traj_p[j, i] = p_temp
+            inner_traj_q[j, i] = np.copy(q_temp)
+            inner_traj_p[j, i] = np.copy(p_temp)
             j += 1
 
         psi_temp += par.omega_lambda(times[i]) * par.dt
 
+
 #%%
 
-q_loops = [list(col[col != 0]) for col in inner_traj_q.T]
-p_loops = [list(col[col != 0]) for col in inner_traj_p.T]
+q_loops = [list(col) for col in inner_traj_q.T]
+p_loops = [list(col) for col in inner_traj_p.T]
 
 steps = [len(q_loop) for q_loop in q_loops]
 actions = []
 hulls = []
+xy_list = []
 
 for j in tqdm(range(len(q_loops))):
     q_loop = q_loops[j]
@@ -108,33 +118,65 @@ for j in tqdm(range(len(q_loops))):
             x[i] = np.sqrt(2 * action) * np.cos(theta)
             y[i] = - np.sqrt(2 * action) * np.sin(theta) * np.sign(q_loop[i] - np.pi)
 
-    x_closed = np.append(x, x[0])
-    y_closed = np.append(y, y[0])
+    xy = np.vstack((x, y)).T
 
-    xy = np.vstack((x_closed, y_closed)).T
+    xy_list.append(xy)
 
-    alpha = 0.2
-    hull = alphashape.alphashape(xy, alpha)
+
+#%%
+
+from scipy.spatial import ConvexHull
+from sklearn.neighbors import NearestNeighbors
+
+actions = []
+
+j = 0
+for j in range(len(q_loops)):
+    #alpha = 0.04
+    #hull = alphashape.alphashape(xy_list[j], alpha)
+
+    points = xy_list[j]
     
+    # Trova punti con pochi vicini (bordo)
+    neighbors = NearestNeighbors(n_neighbors=10)
+    neighbors.fit(points)
+    distances, indices = neighbors.kneighbors(points)
+    
+    # I punti di bordo hanno distanze maggiori ai vicini
+    mean_distances = np.mean(distances, axis=1)
+    threshold = np.percentile(mean_distances, 80)  # top 20% più isolati
+    boundary_mask = mean_distances > threshold
+    boundary_points = points[boundary_mask]
+    
+    # Applica alpha-shape ai punti di bordo
+    alpha = 0.001
+    hull = alphashape.alphashape(boundary_points, alpha)
+
+
     if hull.geom_type == "MultiPolygon":
-        alpha_low = 0.025
-        hull = alphashape.alphashape(xy, alpha_low)
+        print("entro")
+        alpha_low = 0.001
+        hull = alphashape.alphashape(xy_list[j], alpha_low)
+    
+
+    #np.savez(base_dir + f"/actions_stuff/particle_data_xy_{j}.npz",)
+    
+    #alpha_opt = alphashape.optimizealpha(xy)
+    #hull = alphashape.alphashape(xy, alpha_opt)   
 
     hulls.append(hull)
     area = hull.area
     action_final = area / (2 * np.pi)
     actions.append(action_final)
 
-    #plt.scatter(hull.exterior.xy[0], hull.exterior.xy[1], s=1, label=f"Loop {j+1}")
+    #plt.scatter(xy_list[j][:, 0], xy_list[j][:, 1], s=2, label="Traiettoria")
+    #plt.plot(hull.exterior.xy[0], hull.exterior.xy[1], color='red', label="Alpha shape")
     #plt.xlabel("X")
     #plt.ylabel("Y")
     #plt.title("Alpha Shape of Particle Trajectories")
+    #plt.show()
 
-    #print(area)
-
-#plt.show()
-
-#%%
+ #%%
 
 """
 tunes_loops = []
@@ -155,13 +197,23 @@ for idx_loop in tqdm(range(len(q_loops))):
     
 # %%
 
-#sc = plt.scatter(times, actions, c=tunes_loops, s=1, cmap='viridis')
-plt.scatter(times, actions, s=1)
-plt.xlabel("Time (s)")
-plt.ylabel("Action")
-plt.title("Actions for Particle colored by Tune")
-#plt.colorbar(sc, label="Tune")
+actions = np.array(actions)
+times = np.array(times)
+
+# Maschere
+mask_times = times > 3.2
+mask_actions = (actions > 1.6) & (actions < 1.7)
+
+# Costruisci la maschera finale:
+final_mask = (~mask_times) | (mask_times & mask_actions)
+
+plt.plot(times[final_mask], actions[final_mask])
+plt.xlabel("Time [s]")
+plt.ylabel("J")
+plt.ylim(-0.1, 2.0)
 plt.show()
+
+print(times[4])
 
 """
 print(hull)

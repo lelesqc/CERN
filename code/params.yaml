@@ -1,9 +1,14 @@
-epsilon_i: 0.0225
-epsilon_f: 0.04
-nu_m_i: 0.9
-nu_m_f: 0.8
+epsilon_i: 0.0240375
+epsilon_f: 0.0415
+nu_m_i: 0.9615
+nu_m_f: 0.83
 
 radius: 10
-particles: 500
+particles: 10000
 seed: 42
+
+#epsilon_i: 0.45
+#epsilon_f: 0.5
+#nu_m_i: 1.9
+#nu_m_f: 1.8
 

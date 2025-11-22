@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-import params as par
+import params_fcc as par
 import functions as fn
 
 base_dir = os.environ["BASE_DIR"]
@@ -14,7 +14,7 @@ def run_integrator(poincare_mode, n_particles):
     Run the symplectic integrator to evolve the system.
 
     """
-    data = np.load(base_dir + "/init_conditions/init_distribution.npz")
+    data = np.load(base_dir + f"/init_conditions/init_distribution_{n_particles}.npz")
 
     q_init = data['q']
     p_init = data['p']
@@ -118,7 +118,7 @@ def run_integrator(poincare_mode, n_particles):
 
     print(par.omega_lambda(par.t))
 
-    extra_steps = 16384
+    """extra_steps = 16384
     if poincare_mode == "last":
         for _ in tqdm(range(extra_steps)):
             q_temp, p_temp = fn.integrator_step(q_temp, p_temp, psi_temp, par.t, par.dt, fn.Delta_q, fn.dV_dq)  
@@ -136,7 +136,10 @@ def run_integrator(poincare_mode, n_particles):
     q = np.array(q)
     p = np.array(p)
 
-    psi_val = psi
+    psi_val = psi"""
+
+    plt.scatter(q, p)
+    plt.show()
 
     return q, p, psi_val, tunes
 

@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from tqdm.auto import tqdm
 
-import params as par
+import params_fcc as par
 import functions as fn
 
 base_dir = os.environ["BASE_DIR"]

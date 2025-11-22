@@ -3,7 +3,7 @@ from scipy.optimize import brentq
 from scipy.special import ellipk, ellipe
 from sage.functions.jacobi import inverse_jacobi, jacobi
 
-import params as par
+import params_fcc as par
 
 # ------------------ functions -------------------------
 
@@ -59,9 +59,16 @@ def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq):
 
     return q, p
 
-def integrator_step_fixed(q, p, psi, a, omega_m, dt, Delta_q_fixed, dV_dq):
+def hamiltonian(q, p):
+    H0 = 0.5 * par.lambd**2 * p**2 + par.A**2 * np.cos(q)    
+    H1 = par.a_lambda(par.t) * par.omega_lambda(par.t) * np.cos(par.omega_lambda(par.t) * par.t + par.phi_0) * p
+    
+    return H0 + H1
+
+def integrator_step_fixed(q, p, psi, t, a, omega_m, dt, Delta_q_fixed, dV_dq):
     q += Delta_q_fixed(p, psi, a, omega_m, dt/2)
-    q = np.mod(q, 2 * np.pi)        
+    q = np.mod(q, 2 * np.pi)  
+    t_mid = t + dt/2  
     p += dt * dV_dq(q)
     q += Delta_q_fixed(p, psi, a, omega_m, dt/2)
     q = np.mod(q, 2 * np.pi)

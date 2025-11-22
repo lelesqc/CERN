@@ -36,8 +36,8 @@ omega_s = omega_rev * np.sqrt(e * h * V * eta / (2 * np.pi * E_s * beta**2))
 A = omega_s / lambd
 Cq = 3.83e-13
 D = gamma / beta**3 * np.sqrt(damp_rate * Cq / radius)
-#D = 0
-#damp_rate = 0
+D = 0
+damp_rate = 0
 temperature = gamma**2 * h * eta * omega_rev * Cq / (2 * (2 + damping_part_number) * beta**4 * radius) 
 
 # -------------- YAML ------------------

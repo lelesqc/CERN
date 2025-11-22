@@ -2,7 +2,7 @@
 
 export BASE_DIR="/mnt/c/Users/emanu/OneDrive - Alma Mater Studiorum Università di Bologna/CERN_data/code"
 
-RADIUS=10
+RADIUS=10.0
 PARTICLES=10000
 SEC_TO_PLOT=5
 

@@ -3,7 +3,8 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-import params as par
+import params_fcc as par
+import functions as fn
 
 base_dir = os.environ["BASE_DIR"]
 
@@ -17,16 +18,22 @@ def plot(poincare_mode, n_particles, n_to_plot):
 
     str_title = f"a{a_start}-{a_end}_nu{float(omega_start)/par.omega_s:.2f}-{float(omega_end)/par.omega_s:.2f}_{n_particles}"
 
+    print(str_title)
     data = np.load(base_dir + f"/action_angle/{poincare_mode}_{str_title}.npz")
+
+    data_qp = np.load(base_dir + f"/integrator/evolved_qp_{poincare_mode}_{n_particles}.npz")
 
     x = data['x']
     y = data['y']
 
+    q = data_qp["q"]
+    p = data_qp["p"]
+
     if poincare_mode in ["first", "last"]:
-        tunes_data = np.load(base_dir + "/integrator/evolved_qp_last_10000.npz")
+        """tunes_data = np.load(base_dir + "/integrator/evolved_qp_last_10000.npz")
         tunes = tunes_data["tunes"]
 
-        mask = (tunes > (nu_f - 10e-3)) & (tunes < (nu_f + 10e-3))
+        mask = (tunes > (nu_f - 10e-3)) & (tunes < (nu_f + 10e-3)) & (x**2 + y**2 > 20)
 
         tunes_island = tunes[mask]
         n_trapped = len(tunes_island)
@@ -52,25 +59,41 @@ def plot(poincare_mode, n_particles, n_to_plot):
 
         results_dir = base_dir + "/trapping/trapping_data"
         if not os.path.exists(results_dir):
-            os.makedirs(results_dir)
+            os.makedirs(results_dir)"""
 
         #np.savez(results_dir + f"/results_{str_title}.npz", **stats)
 
+
+        # PROBABILITà DI INTRAPPOLAMENTO TEORICA
+        #dw_dt = 
+        #kappa_squared = 1
+        #t_star = 1
+        #A = G(I)
+        #kappa_pr = 1 - kappa_squared
+        #g = - np.pi**2 / (16 * kappa_squared * kappa_pr) * (E(k) - kappa_pr * K(k)) / K(k)**3
+        #omega_prime = 1
+        #prob_th = np.sqrt(par.epsilon(t_star)) * 8 / np.pi * g / omega_prime * (np.sqrt(- A/g))#prime
+
+
+        #mask = ((x+1)**2 + y**2) > 7.5**2
+        #x = x[mask]
+        #y = y[mask]
         plt.figure(figsize=(7,7))
-        sc = plt.scatter(x, y, c=tunes, cmap="viridis", s=4, alpha=1.0)
+        #sc = plt.scatter(x[mask], y[mask], c=tunes[mask], cmap="viridis", s=4, alpha=1.0)
+
+        energies = fn.hamiltonian(q, p)
+
+        plt.scatter(x, y, c=energies, s=1)
+        #plt.colorbar()
         plt.xlabel("X", fontsize=20)
         plt.ylabel("Y", fontsize=16)
-        plt.xlim(-15, 15)
-        plt.ylim(-15, 15)
+        #plt.xlim(-15, 15)
+        #plt.ylim(-15, 15)
         plt.tick_params(labelsize=18)
-        plt.colorbar(sc, label="Tune")
-        plt.title(f"Trapping probability: {stats["trapping_prob"]:.1f}%")
+        #plt.colorbar(sc, label="Tune")
+        #plt.title(f"Trapping probability: {stats["trapping_prob"]:.1f}%")
         plt.tight_layout()
-
-        output_dir = base_dir + "/trapping" + "/trapping_pics"
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        
+      
         #plt.savefig(output_dir + "/" + str_title + ".png")
 
         plt.show()
