@@ -2,7 +2,7 @@
 
 SIGMA=1
 MACHINE="FCC"    # FCC, ALS
-INIT_COND="gaussian"    # gaussian, circle, grid, ring
+INIT_COND="gaussian"    # gaussian, circle, grid
 PARTICLES=10000
 MODE="phasespace"    # phasespace, evolution
 DATA_FILE="./integrator/${MODE}_qp_${PARTICLES}_${MACHINE}_relaxed_1.00.npz"
@@ -13,26 +13,12 @@ THERMAL_BATH="yes"
 if [ "$MACHINE" == "FCC" ]; then
     DATA_SUFFIX="fcc"
     PARAMS_MODULE="params_fcc"
-    
-    if [ "$INIT_COND" == "grid" ] || [ "$INIT_COND" == "circle" ]; then
-        GRID_LIM=3.2
-    elif [ "$INIT_COND" == "gaussian" ]; then
-        GRID_LIM=1.9
-    elif [ "$INIT_COND" == "ring" ]; then
-        GRID_LIM=3.4
-    fi
+    GRID_LIM=3
 
 elif [ "$MACHINE" == "ALS" ]; then
     DATA_SUFFIX="als"
     PARAMS_MODULE="params"
-
-    if [ "$INIT_COND" == "grid" ] || [ "$INIT_COND" == "circle" ]; then
-        GRID_LIM=8.0
-    elif [ "$INIT_COND" == "gaussian" ]; then
-        GRID_LIM=10.0
-    elif [ "$INIT_COND" == "ring" ]; then
-        GRID_LIM=13
-    fi
+    GRID_LIM=8
 fi
 
 export MACHINE
