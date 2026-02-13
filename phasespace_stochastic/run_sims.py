@@ -1,27 +1,32 @@
 import yaml
 import subprocess
-from pathlib import Path
 import numpy as np
+import os
+import importlib
 
-var_to_scan = "sigma"    # sigma, epsilon
+params_module = os.environ.get("PARAMS_MODULE")
+params = importlib.import_module(params_module)
+par = params.Params()
 
-if var_to_scan == "sigma":
-    var_list = np.linspace(0, 1.0, 25)
+machine = os.environ.get("MACHINE").lower()
 
-elif var_to_scan == "epsilon":
+nu_ms = np.linspace(.84, .94, 11)
+epsilon = .0282
+
+var_to_scan = "nu_m"
+
+if var_to_scan == "epsilon":
     var_list = 1
 
-out_dir = Path("./integrator")
-out_dir.mkdir(parents=True, exist_ok=True)
+elif var_to_scan == "nu_m":
+    var_list = np.copy(nu_ms)
 
 for var in var_list:
     with open("params.yaml") as f:
         params = yaml.safe_load(f)
     params[var_to_scan] = float(var)
+
     with open("params.yaml", "w") as f:
         yaml.dump(params, f)
 
-    #data_file = out_dir / f"evolved_qp_evolution_{var:.3f}.npz"
-
-    #print(f"Running sim for {var_to_scan}={var} -> DATA_FILE={data_file}")
-    #subprocess.run(["./run_evolution.sh", str(data_file)], check=True)
+    subprocess.run(["./run_evolution.sh", f"{var:.4f}"], check=True)

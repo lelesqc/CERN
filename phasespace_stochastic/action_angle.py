@@ -3,7 +3,6 @@ import importlib
 import sys
 import numpy as np
 from tqdm.auto import tqdm
-import matplotlib.pyplot as plt
 
 import functions as fn
 
@@ -28,6 +27,7 @@ def run_action_angle(mode, n_particles):
 
     actions_list = np.zeros((n_steps, n_particles))
     energies = np.zeros((n_steps, n_particles))
+    vars = np.zeros(n_steps)
 
     x = np.zeros((n_steps, n_particles))
     y = np.zeros((n_steps, n_particles))
@@ -44,10 +44,10 @@ def run_action_angle(mode, n_particles):
                 action, theta = fn.compute_action_angle(kappa_squared, P)
                 actions_list[i, j] = action 
                 energies[i, j] = h_0
-
-                x[i, j] = np.sqrt(2 * action) * np.cos(theta)
-                y[i, j] = - np.sqrt(2 * action) * np.sin(theta) * np.sign(q[i, j]-np.pi)
-
+                
+                x[i, j] = np.real(np.sqrt(2 * action) * np.cos(theta))
+                y[i, j] = - np.real(np.sqrt(2 * action) * np.sin(theta) * np.sign(q[i, j]-np.pi))
+        
     x = np.array(x)
     y = np.array(y)
 
@@ -65,5 +65,5 @@ if __name__ == "__main__":
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    file_path = os.path.join(output_dir, f"{mode}_{n_particles}_a{par.a:.3f}_nu{par.omega_m/par.omega_s:.2f}_{machine}.npz")
+    file_path = os.path.join(output_dir, f"{mode}_{n_particles}_a{par.a:.7f}_nu{par.omega_m/par.omega_s:.5f}_{machine}.npz")
     np.savez(file_path, x=x, y=y, actions=actions_list, energies=energies)

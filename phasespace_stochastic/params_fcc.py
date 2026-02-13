@@ -20,22 +20,20 @@ class Params:
         self.momentum_compaction = 14.8e-6 
         self.damping_part_number = self.momentum_compaction * self.bending_radius / self.radius
         self.E_s = self.gamma * self.mc2
-        #self.eta = 14.8e-6
         self.eta = self.momentum_compaction - 1/self.gamma**2
         self.U_0 = 0.039e9
-        #self.U_0 = self.C_gamma * (1e-9)**3 * self.E_s**4 / self.radius
-
         self.omega_rev = 2 * np.pi / self.T_rev
-        self.k_B = 8.617333262e-5
 
         # -------------- model -----------------
+
         if thermal_bath == "no":
             self.damp_rate = 0
         else:
             self.damp_rate = self.U_0 / (2 * self.T_rev * self.E_s) * (2 + self.damping_part_number)
+
         self.beta = np.sqrt(1 - 1/self.gamma**2)
         self.N = 100
-        self.N_turn = 150  # circa 10 volte il damping time
+        self.N_turn = 125
         self.phi_0 = 0.0
         self.e = 1
         self.lambd = np.sqrt(self.h * self.eta * self.omega_rev)
@@ -46,6 +44,7 @@ class Params:
         self.temperature = self.gamma**2 * self.h * self.eta * self.omega_rev * self.Cq / (2 * (2 + self.damping_part_number) * self.beta**4 * self.radius) 
 
         # -------------- YAML ------------------
+
         with open(config_path) as f:
             config = yaml.safe_load(f)
         self.epsilon = config["epsilon"]
@@ -53,6 +52,7 @@ class Params:
         self.sigma = config.get("sigma", 1.0)
 
         # ------------- variables -----------------
+        
         if modulation == "no":
             self.a = 0
         else:
@@ -65,5 +65,3 @@ class Params:
         self.steps = int(round(self.T_mod / self.dt))
         self.n_steps = self.steps * self.N_turn
         self.t = 0.0
-
-print(Params().momentum_compaction, Params().eta)

@@ -2,10 +2,9 @@ import os
 import importlib
 import sys
 import numpy as np
-from tqdm import tqdm
 import matplotlib.pyplot as plt
-
 import functions as fn
+from tqdm import tqdm
 
 params_module = os.environ.get("PARAMS_MODULE")
 params = importlib.import_module(params_module)
@@ -16,14 +15,10 @@ machine = os.environ.get("MACHINE").lower()
 def run_integrator(init_type, mode, n_particles):
     data = np.load(f"init_conditions/init_qp_{n_particles}_{init_type}_{machine}.npz")
 
-    q_init = data["q"]
-    p_init = data["p"]
-
-    q = np.copy(q_init)
-    p = np.copy(p_init)
-
+    q = data["q"]
+    p = data["p"]
     psi = par.phi_0
-
+    
     quarter = int(par.n_steps * 0.25)
     half = int(par.n_steps * 0.5)
     three_quarters = int(par.n_steps * 0.75)
@@ -47,11 +42,11 @@ def run_integrator(init_type, mode, n_particles):
                 sec_count += 1
                 
             if step_count == quarter:
-                print("un quarto")
+                print("1/4")
             elif step_count == half:
-                print("metà") 
+                print("1/2") 
             elif step_count == three_quarters:
-                print("tre quarti") 
+                print("3/4") 
             
             step_count += 1
 
@@ -66,11 +61,11 @@ def run_integrator(init_type, mode, n_particles):
             step_count += 1
 
             if step_count == quarter:
-                print("un quarto")
+                print("1/4")
             elif step_count == half:
-                print("metà") 
+                print("1/2") 
             elif step_count == three_quarters:
-                print("tre quarti")  
+                print("3/4")  
 
         psi += par.omega_m * par.dt
         par.t += par.dt     

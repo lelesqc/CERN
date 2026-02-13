@@ -4,7 +4,6 @@ import importlib
 from scipy.optimize import brentq
 from scipy.special import ellipk, ellipe
 from sage.functions.jacobi import inverse_jacobi, jacobi
-import matplotlib.pyplot as plt
 
 params_module = os.environ.get("PARAMS_MODULE")
 params = importlib.import_module(params_module)
@@ -24,6 +23,8 @@ def compute_action_angle(kappa_squared, P):
     x = P / (2 * np.sqrt(kappa_squared) * par.A)
     
     u = inverse_jacobi('cn', float(x), float(kappa_squared))
+    #u = 1    # if u is not needed since it is pretty heavy
+    
     theta = (Omega / par.A) * u
     return action, theta
     
@@ -36,7 +37,6 @@ def Delta_q(p, psi, t, dt, par):
 def hamiltonian(q, p, par):
     H0 = 0.5 * par.lambd**2 * p**2 + par.A**2 * np.cos(q)    
     H1 = par.a * par.omega_m * np.cos(par.omega_m * par.t + par.phi_0) * p
-        
     return H0 + H1
 
 def compute_action_angle_inverse(X, Y):
@@ -66,22 +66,6 @@ def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq, par):
 
     return q, p
 
-"""def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq, par):
-    par.damp_rate=0
-    noise_factor = par.gamma / par.beta**2 * np.sqrt(2 * par.damp_rate * par.h * par.eta * par.Cq / par.radius)
-    sigma = getattr(par, "sigma", 1.0)
-    #noise_factor = 0
-
-    q += Delta_q(p, psi, t, dt/2, par)
-    q = np.mod(q, 2 * np.pi)        
-    t_mid = t + dt/2
-    #p += dt * dV_dq(q, par) - dt * 2 * par.damp_rate * p / par.beta**2 + np.sqrt(dt) * noise_factor * np.random.normal(0, 1, size=p.shape) 
-    p += dt * dV_dq(q, par) - dt * 2 * par.damp_rate * p / par.beta**2 + np.sqrt(dt) * noise_factor * np.random.normal(0, sigma, size=p.shape) 
-    q += Delta_q(p, psi, t_mid, dt/2, par)
-    q = np.mod(q, 2 * np.pi)     
-
-    return q, p"""
-
 def find_h0_numerical(I_target):
     def G_objective(h0_val):
         m = 0.5 * (1 + h0_val / par.A**2)
@@ -108,3 +92,13 @@ def H_of_I(action, angle, q, p, kappa):
     term = action * par.omega_m
 
     return H0 + H1 - term
+
+def birkhoff_average(phase_advances, n=1):
+    N = len(phase_advances)
+    k = np.arange(1, N)
+    t = k/N
+    weights = np.exp(-1/(t**n * (1-t)**n))
+    weights[t <= 0] = 0
+    weights[t >= 1] = 0
+    norm = np.sum(weights)
+    return np.sum(weights * phase_advances[1:]) / norm
