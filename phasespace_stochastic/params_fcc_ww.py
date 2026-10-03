@@ -11,17 +11,22 @@ class Params:
         self.bending_radius = 14430 
         self.h = 130000
         self.C_gamma = 8.85e-5    # m * GeV^-3
-        self.nu_s = 0.025
+        
+        # --- AGGIORNATI PER FCC-ee WW (Baseline FS 2505.00274) ---
+        self.nu_s = 0.08                          # Synchrotron tune aggiornato
         self.T_rev = 302.54e-6
-        self.V = 0.1e9
+        self.V = 1.0e9                            # RF Voltage aumentato a 1.0 GV
         self.radius = 10.76e3
         self.mc2 = 0.511e6
-        self.gamma = 89236.8
-        self.momentum_compaction = 14.8e-6 
+        self.gamma = 156555.8                     # Gamma per E = 80 GeV
+        self.momentum_compaction = 7.3e-6         # alpha_c confermato
+        self.U_0 = 0.374e9                        # Energy loss ricalcolato (374 MeV)
+
+        # -----------------------------------------
+        
         self.damping_part_number = self.momentum_compaction * self.bending_radius / self.radius
         self.E_s = self.gamma * self.mc2
         self.eta = self.momentum_compaction - 1/self.gamma**2
-        self.U_0 = 0.039e9
         self.omega_rev = 2 * np.pi / self.T_rev
 
         # -------------- model -----------------
@@ -32,8 +37,10 @@ class Params:
             self.damp_rate = self.U_0 / (2 * self.T_rev * self.E_s) * (2 + self.damping_part_number)
 
         self.beta = np.sqrt(1 - 1/self.gamma**2)
+        
         self.N = 100
-        self.N_turn = 150
+        self.N_turn = 100
+        
         self.phi_0 = 0.0
         self.e = 1
         self.lambd = np.sqrt(self.h * self.eta * self.omega_rev)

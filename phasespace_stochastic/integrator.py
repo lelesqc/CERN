@@ -73,10 +73,14 @@ def run_integrator(init_type, mode, n_particles):
     if mode == "phasespace":
         q = q_traj[:sec_count, :]
         p = p_traj[:sec_count, :]
+
+        #print(sec_count)
         
     elif mode == "evolution":
         q = np.copy(q_last)
         p = np.copy(p_last)
+
+        #np.savez(f"ipac_simulations/single_try/a_{par.a:.3f}_nu_{par.nu_m:.2f}.npz", q=q, p=p)
 
     return q, p, psi_final, time_final
 

@@ -67,21 +67,44 @@ def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq, par):
     return q, p
 
 def find_h0_numerical(I_target):
-    def G_objective(h0_val):
-        m = 0.5 * (1 + h0_val / par.A**2)
-        epsilon = 1e-12
-        m = np.clip(m, epsilon, 1 - epsilon)
-        return (8 * par.A / np.pi) * (ellipe(m) - (1 - m) * ellipk(m)) - I_target
+  # Estrai lo scalare se viene passato un array di dimensione 1
+  if isinstance(I_target, np.ndarray):
+    if I_target.size == 1:
+      I_target = I_target.item()
+    else:
+      return np.array([find_h0_numerical(val) for val in I_target])
 
-    epsilon_h = 1e-9 * par.A**2
-    a = -par.A**2 + epsilon_h
-    b = par.A**2 - epsilon_h
-    I_min = (8 * par.A / np.pi) * (ellipe(1e-12) - (1 - 1e-12) * ellipk(1e-12))
-    I_max = (8 * par.A / np.pi) * (ellipe(1 - 1e-12) - (1 - (1 - 1e-12)) * ellipk(1 - 1e-12))
-    if not (I_min <= I_target <= I_max):
-        print(f"Attenzione: I_target={I_target} fuori range [{I_min}, {I_max}]")
-        raise ValueError("I_target fuori range fisico")
+  def G_objective(h0_val):
+    m = 0.5 * (1 + h0_val / par.A**2)
+    epsilon = 1e-12
+    m = np.clip(m, epsilon, 1 - epsilon)
+    return (8 * par.A / np.pi) * (ellipe(m) - (1 - m) * ellipk(m)) - I_target
+
+  epsilon_h = 1e-9 * par.A**2
+  a = -par.A**2 + epsilon_h
+  b = par.A**2 - epsilon_h
+
+  I_min = (8 * par.A / np.pi) * (ellipe(1e-12) - (1 - 1e-12) * ellipk(1e-12))
+  I_max = (8 * par.A / np.pi) * (
+      ellipe(1 - 1e-12) - (1 - (1 - 1e-12)) * ellipk(1 - 1e-12)
+  )
+
+  if not (I_min <= I_target <= I_max):
+    print(
+        f'Attenzione: I_target={I_target} fuori range [{I_min}, {I_max}].'
+        ' Salto la particella.'
+    )
+    return np.nan
+
+  # Tenta la ricerca dello zero; se brentq fallisce per f(a)*f(b) > 0, restituisce NaN
+  try:
     return brentq(G_objective, a, b)
+  except ValueError:
+    print(
+      f'Attenzione: Impossibile trovare la radice per I_target={I_target}'
+      ' (segno non discordante agli estremi). Salto la particella.'
+    )
+    return np.nan
 
 def H_of_I(action, angle, q, p, kappa):
     q_term = np.exp(- np.pi * ellipk(1-kappa) / ellipk(kappa))

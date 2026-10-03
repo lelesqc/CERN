@@ -5,32 +5,41 @@ import matplotlib.pyplot as plt
 from tqdm.auto import tqdm
 from scipy.integrate import trapezoid
 
-import params_fcc
+import os
 import functions as fn
+import importlib
 
 import warnings
 warnings.filterwarnings("ignore")
 
-par = params_fcc.Params()
+os.environ["MACHINE"] = "FCC"
+os.environ["THERMAL_BATH"] = "no"
+os.environ["MODULATION"] = "no"
+os.environ["PARAMS_MODULE"] = "params_fcc"
+
+params_module = os.environ.get("PARAMS_MODULE")
+params = importlib.import_module(params_module)
+par = params.Params()
 
 init_data = np.load("./init_conditions/init_qp_10000_gaussian_fcc.npz")
 
-q = init_data["q"]
-p = init_data["p"]
+q = init_data["q"][::100]
+p = init_data["p"][::100]
 
 psi = par.phi_0
 par.t = 0
 
 n_particles = int(q.shape[0])
-n_times = int(q.shape[0])
 
-q_sec = np.zeros((par.n_steps // 50, n_particles), dtype=np.float32)
-p_sec = np.zeros((par.n_steps // 50, n_particles), dtype=np.float32)
+q_sec = np.zeros((500, n_particles), dtype=np.float32)
+p_sec = np.zeros((500, n_particles), dtype=np.float32)
 sec_count = 0
+
+n_times = int(q_sec.shape[0])
 
 times = []
 step = 0
-for step in tqdm(range(par.n_steps)): 
+while sec_count < q_sec.shape[0]: 
     q, p = fn.integrator_step(q, p, psi, par.t, par.dt, fn.Delta_q, fn.dV_dq, par)
 
     if np.cos(psi) > 1.0 - 1e-3:              
@@ -43,8 +52,8 @@ for step in tqdm(range(par.n_steps)):
     psi += par.omega_m * par.dt
     par.t += par.dt
 
-q = q_sec[:sec_count, :]
-p = p_sec[:sec_count, :]
+q = np.copy(q_sec)
+p = np.copy(p_sec)
 
 steps = int(len(times)/n_times)
 
@@ -55,13 +64,13 @@ steps = int(len(times)/n_times)
 
 import alphashape
 
-x = np.zeros((n_times, n_particles))
-y = np.zeros((n_times, n_particles))
+x = np.zeros((q.shape[0], n_particles))
+y = np.zeros((q.shape[0], n_particles))
 
-actions_list = np.zeros((n_times, n_particles))
+actions_list = np.zeros((q.shape[0], n_particles))
 
 for j in tqdm(range(n_particles)):
-    for i in range(n_times):
+    for i in range(q.shape[0]):
         h_0 = fn.H0_for_action_angle(q[i, j], p[i, j], par)
         kappa_squared = 0.5 * (1 + h_0 / (par.A**2))
 
@@ -75,8 +84,13 @@ for j in tqdm(range(n_particles)):
             x[i, j] = np.sqrt(2 * action) * np.cos(theta)
             y[i, j] = - np.sqrt(2 * action) * np.sin(theta) * np.sign(q[i, j]-np.pi)
 
-x = np.array(x)
-y = np.array(y)
+
+#%% 
+
+x_try = np.array(x)[:, ::500]
+y_try = np.array(y)[:, ::500]
+
+n_particles = x.shape[1]
 
 areas = []
 
@@ -90,14 +104,33 @@ for j in tqdm(range(n_particles)):
         if hasattr(hull_j, "geoms"):  # MultiPolygon
             for geom in hull_j.geoms:
                 x_hull, y_hull = geom.exterior.xy
+                plt.scatter(x[:, j], y[:, j], s=1)
                 plt.plot(x_hull, y_hull, c="r", label="Hull")
         else:  # Polygon
             x_hull, y_hull = hull_j.exterior.xy
+            plt.scatter(x[:, j], y[:, j], s=1)
             plt.plot(x_hull, y_hull, c="r", label="Hull")
-    plt.title(f"Alpha shape hull - particella {j}")
+    plt.title(f"Alpha shape hull - particle {j}")
     plt.legend()
     plt.show()
 
+#%%
+
+areas = np.array(areas)
+actions = areas / (2 * np.pi)
+
+print(np.mean(actions))
+
+plt.hist(actions, bins=int(np.sqrt(n_particles)), density=True)
+plt.show()
+
+#%%
+
+h_0 = fn.H0_for_action_angle(q, p, par)
+
+kappa_squared = 0.5 * (1 + h_0 / (par.A**2))
+actions, _ = fn.compute_action_angle(kappa_squared, 1)
+h0_of_I = 2 * par.A**2 * (kappa_squared - 1/2)
 
 #%%
 

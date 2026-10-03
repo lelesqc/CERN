@@ -5,12 +5,51 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 from scipy.special import ellipk
+from pathlib import Path
 
 import functions as fn
 
 params_module = os.environ.get("PARAMS_MODULE")
 params = importlib.import_module(params_module)
 par = params.Params()
+
+config = os.environ.get("CONFIG")
+
+def generate_grid_big(grid_lim, n_particles):
+  X = np.linspace(-0.01, grid_lim, n_particles)
+  Y = np.zeros_like(X)
+
+  action, theta = fn.compute_action_angle_inverse(X, Y)
+
+  Q_list = []
+  P_list = []
+
+  for act, angle in zip(action, theta):
+    act_scalar = act.item() if isinstance(act, np.ndarray) else act
+
+    h_0 = fn.find_h0_numerical(act_scalar)
+
+    if np.isnan(h_0):
+      continue
+
+    kappa_squared = 0.5 * (1 + h_0 / (par.A**2))
+    freq = np.pi / 2 * (par.A / ellipk(kappa_squared))
+
+    Q, P = fn.compute_Q_P(angle, freq, kappa_squared)
+
+    Q_list.append(Q)
+    P_list.append(P)
+
+  Q_arr = np.array(Q_list)
+  P_arr = np.array(P_list)
+
+  phi, delta = fn.compute_phi_delta(Q_arr, P_arr)
+  phi = np.mod(phi, 2 * np.pi)
+
+  q_init = phi
+  p_init = delta
+
+  return q_init, p_init
 
 def generate_grid(grid_lim, n_particles):
     X = np.linspace(-0.01, grid_lim, n_particles)
@@ -83,9 +122,6 @@ def generate_circle(radius, n_particles):
     q_init = np.array(phi)
     p_init = np.array(delta)
 
-    #q_init += 1
-    #p_init += - np.min(p_init) + np.max(p_ps) + 0.001
-
     """phasespace_qp = np.load(f"./integrator/phasespace_qp_150_{machine}.npz")
     q_ps = phasespace_qp["q"]
     p_ps = phasespace_qp["p"]   
@@ -96,29 +132,69 @@ def generate_circle(radius, n_particles):
 
     return q_init, p_init
 
-def generate_gaussian(sigma, n_particles, x_center, x_min, x_max, y_min, y_max):
+def generate_gaussian(sigma, n_particles, x_center):
     X_list = []
     Y_list = []
     action_list = []
     theta_list = []
 
-    sigma += 50/100 * sigma
+    region = "cen"
 
-    """name_dir = f"nu_{par.nu_m:.2f}"
-    data_relax = np.load(f"./ipac_simulations/a_0.03/{name_dir}/relax_point_isl.npz")
+    name_dir = f"eps_{par.epsilon:.3f}"
+    #name_dir = f"nu_0.87"
+    freq = f"nu_{par.nu_m:.2f}"
+    
+    dir_path = Path(f"./other_config/{config}/{freq}/{name_dir}")
+    dir_path.mkdir(parents=True, exist_ok=True)
+
+    name_dir = "eps_0.028"
+    freq = "nu_0.87"
+
+    #data_relax = np.load(f"./other_config/als/{name_dir}/{freq}/fixed_point_{region}.npz")
+    data_relax = np.load(f"./other_config/{config}/{freq}/{name_dir}/fixed_point_{region}.npz")
+
     x_center = data_relax["x"]
-    y_center = data_relax["y"]"""
+    y_center = data_relax["y"]
 
-    x_center = 0
-    y_center = 0
+    #x_center = 0
+    #y_center = 0
+
+    #base_dir = "./ipac_simulations/eps_0.028"
+    base_dir = f"./other_config/{config}/{freq}"
+    npz_path = os.path.join(base_dir, "eps_0.028", f"final_distr_{region}.npz")
+    data = np.load(npz_path)   
+
+    x = data["x"]
+    y = data["y"]  
+
+    if x.ndim == 1:
+        x0 = np.mean(x)
+        y0 = np.mean(y)
+        X = np.vstack([x - x0, y - y0])  # shape (2, N)
+    elif x.ndim == 2:
+        x0 = np.mean(x[-1, :])
+        y0 = np.mean(y[-1, :])
+        X = np.vstack([x[-1, :] - x0, y[-1, :] - y0])  # shape (2, N)
+    
+    Sigma = np.cov(X)  # (2, 2)
+    det_Sigma = np.linalg.det(Sigma)
+    emittance = np.sqrt(det_Sigma)
+
+    target_emit = 2.5 * emittance
+
+    std_dev = np.sqrt(target_emit)
+    r_cut = 3.5 * std_dev
 
     while len(X_list) < n_particles:
-        X_try = np.random.normal(loc=x_center, scale=np.sqrt(sigma), size=n_particles)
-        Y_try = np.random.normal(loc=y_center, scale=np.sqrt(sigma), size=n_particles)
-        r=x_max
-        mask = (X_try - x_center)**2 + (Y_try - y_center)**2 <= r**2
+        X_try = np.random.normal(loc=x_center, scale=std_dev, size=n_particles)
+        Y_try = np.random.normal(loc=y_center, scale=std_dev, size=n_particles)
+        #r=x_max
+        mask = (X_try - x_center)**2 + (Y_try - y_center)**2 <= r_cut**2
         X_try = X_try[mask]
         Y_try = Y_try[mask]
+
+        X_try += 4
+        Y_try -= 1
 
         action_try, theta_try = fn.compute_action_angle_inverse(X_try, Y_try)
 
@@ -138,6 +214,8 @@ def generate_gaussian(sigma, n_particles, x_center, x_min, x_max, y_min, y_max):
     Y_list = np.array(Y_list[:n_particles])
     action = np.array(action_list[:n_particles])
     theta = np.array(theta_list[:n_particles])
+
+    #X_list += 4
 
     kappa_squared_list = np.empty(n_particles)
     Omega_list = np.empty(n_particles)
@@ -160,12 +238,12 @@ def generate_gaussian(sigma, n_particles, x_center, x_min, x_max, y_min, y_max):
     q_init = np.array(phi)
     p_init = np.array(delta)
     
-    """"phasespace_qp = np.load(f"./integrator/phasespace_qp_150_{machine}.npz")
-    q_ps = phasespace_qp["q"]
-    p_ps = phasespace_qp["p"]
+    """phasespace = np.load(f"action_angle/phasespace_75_a{par.a:.7f}_nu{par.omega_m/par.omega_s:.5f}_{machine}_{config}.npz")
+    x_ps = phasespace["x"]
+    y_ps = phasespace["y"]
 
-    plt.scatter(q_ps, p_ps, s=1)
-    plt.scatter(q_init, p_init, s=1)
+    plt.scatter(x_ps, y_ps, s=1)
+    plt.scatter(X_list, Y_list, s=1)
     plt.show()"""
 
     return q_init, p_init
@@ -252,16 +330,13 @@ if __name__ == "__main__":
         q_init, p_init = load_data_qp(loaded_data)
 
     elif init_type == "gaussian":
-        if machine == "fcc":
-            q_init, p_init = generate_gaussian(sigma, n_particles, 0, -grid_lim, grid_lim, -grid_lim, grid_lim)    # center FCC
-
-        elif machine == "als":
-            q_init, p_init = generate_gaussian(sigma, n_particles, 0, -grid_lim, grid_lim, -grid_lim, grid_lim)    # center ALS
-
+        q_init, p_init = generate_gaussian(sigma, n_particles, 0)
     elif init_type == "circle":
         q_init, p_init = generate_circle(grid_lim, n_particles)
     elif init_type == "grid":
         q_init, p_init = generate_grid(grid_lim, n_particles)
+    elif init_type == "grid_big":
+        q_init, p_init = generate_grid_big(grid_lim, n_particles)
     
     output_dir = "init_conditions"
     if not os.path.exists(output_dir):
