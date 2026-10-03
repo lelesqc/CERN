@@ -6,9 +6,9 @@ import functions as fn
 import matplotlib.pyplot as plt
 from scipy.special import ellipk
 
-import params
+import params_fcc as par
 
-def generate_circle(radius, n_particles, par):
+def generate_circle(radius, n_particles, idx_start, idx_end):
     X_list = np.empty(n_particles)
     Y_list = np.empty(n_particles)
     kappa_squared_list = np.empty(n_particles)
@@ -42,12 +42,13 @@ def generate_circle(radius, n_particles, par):
 
     phi, delta = fn.compute_phi_delta(Q_list, P_list)
     phi = np.mod(phi, 2 * np.pi) 
-    q_init = np.array(phi)
-    p_init = np.array(delta)
+
+    q_init = np.array(phi[idx_start:idx_end])
+    p_init = np.array(delta[idx_start:idx_end])
 
     return q_init, p_init
 
-def generate_gaussian(sigma, n_particles, x_center, x_min, x_max, y_min, y_max, par):
+def generate_gaussian(sigma, n_particles, x_center, x_min, x_max, y_min, y_max, idx_start, idx_end):
     X_list = []
     Y_list = []
     action_list = []
@@ -101,17 +102,35 @@ def generate_gaussian(sigma, n_particles, x_center, x_min, x_max, y_min, y_max, 
     q_init = np.array(phi)
     p_init = np.array(delta)
 
+    plt.scatter(q_init, p_init, s=1)
+    plt.show()
+
     return q_init, p_init
 
-def load_data_qp(filename, idx_start, idx_end, par):
+def load_data_qp(filename, idx_start, idx_end):
     data = np.load(filename)
-    fn.par = par
     
     q = data['q']
     p = data['p']
 
-    q_init = np.array(q[idx_start:idx_end])
-    p_init = np.array(p[idx_start:idx_end])
+    #q_init = np.array(q[idx_start:idx_end])
+    #p_init = np.array(p[idx_start:idx_end])  
+
+    steps = 10000//idx_end 
+    q_init = np.array(q[::steps])
+    p_init = np.array(p[::steps])
+
+    #q_init *= 4
+    #p_init *= 4
+    #p_init -= 0.025
+
+    data_qp = np.load("../phasespace_stochastic/integrator/phasespace_qp_60_fcc.npz")
+    q_ps = data_qp["q"]
+    p_ps = data_qp["p"]
+
+    plt.scatter(q_ps, p_ps, s=1)
+    plt.scatter(q_init, p_init, s=1)
+    #plt.show()
 
     return q_init, p_init
 
@@ -126,16 +145,14 @@ if __name__ == "__main__":
     loaded_data = sys.argv[4] if len(sys.argv) > 4 else None   
     idx_start = int(sys.argv[5]) if len(sys.argv) > 5 else 0
     idx_end = int(sys.argv[6]) if len(sys.argv) > 6 else None
-    params_path = sys.argv[7] if len(sys.argv) > 7 else "params.yaml"
-    par = params.load_params(params_path)
 
     if loaded_data is not None:
-        #q_init, p_init = load_data_xy(loaded_data)
-        q_init, p_init = load_data_qp(loaded_data, idx_start, idx_end, par)
+       #q_init, p_init = load_data_xy(loaded_data)
+        q_init, p_init = load_data_qp(loaded_data, idx_start, idx_end)
             
     else:
-        q_init, p_init = generate_circle(radius, n_particles)
-        #q_init, p_init = generate_gaussian(sigma, n_particles, 0, -radius, radius, -radius, radius)
+        q_init, p_init = generate_circle(radius, n_particles, idx_start, idx_end)
+        q_init, p_init = generate_gaussian(sigma, n_particles, 0, -radius, radius, -radius, radius, idx_start, idx_end)
 
     output_dir = "init_conditions"
     if not os.path.exists(output_dir):

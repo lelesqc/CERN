@@ -2,13 +2,10 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import functions as fn
-import params
+import params_fcc as par
 from scipy.integrate import trapezoid
-from scipy.stats import wasserstein_distance, ks_2samp
 
-def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end, par):
-    fn.par = par
-    
+def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end):    
     a_start = par.a_lambda(par.T_percent)
     omega_start = par.omega_lambda(par.T_percent)
     a_end = par.a_lambda(par.T_tot)
@@ -22,8 +19,8 @@ def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end, par):
     str_title = f"a{a_start_str}-{a_end_str}_nu{float(omega_start_str)/par.omega_s:.7f}-{float(omega_end_str)/par.omega_s:.3f}"
 
     data = np.load(f"action_angle/{poincare_mode}_{str_title}_{idx_start}_{idx_end}.npz")
-    data_ps = np.load(f"../phasespace_stochastic/action_angle/phasespace_100_a0.050_nu0.83_als.npz")
-    data_qp = np.load(f"integrator/evolved_qp_{poincare_mode}.npz")
+    data_ps = np.load(f"../phasespace_stochastic/action_angle/phasespace_100_a0.0313253_nu0.83000_fcc.npz")
+    data_qp = np.load(f"integrator/evolved_qp_{poincare_mode}_{idx_start}_{idx_end}.npz")
 
     t_final = data_qp["t_list"]
 
@@ -35,8 +32,8 @@ def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end, par):
     p = data_qp["p"]
     #t_final = data_qp["t_final"]
 
-    mask = ((x+0.5)**2 + y**2) > 9    # ALS 
-    #mask = ((x+0.25)**2 + y**2) > 1.5
+    #mask = ((x+0.5)**2 + y**2) > 9    # ALS 
+    mask = ((x+0.2)**2 + y**2) > 1.5
 
     """x_rel = x - np.mean(x)
     y_rel = y - np.mean(y)
@@ -57,12 +54,14 @@ def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end, par):
         #q_cen = q[~mask]
         #p_cen = p[~mask]
 
-        """plt.scatter(x_ps, y_ps, s=1) 
-        plt.scatter(x, y, s=1)
-        plt.show()
+        #plt.scatter(x_ps, y_ps, s=1) 
+        #plt.scatter(x, y, s=1)
+        #plt.show()
 
         par.t = t_final
-
+        print(par.t)
+        
+        
         E0 = fn.hamiltonian(np.mean(q), np.mean(p))
         #E0 = np.min(fn.hamiltonian(q, p))
         h_0 = fn.hamiltonian(q, p) 
@@ -72,6 +71,9 @@ def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end, par):
 
         actions, _ = fn.compute_action_angle(kappa_squared, 1)
         actions -= np.min(actions)
+
+        #actions = actions[(actions >= 0) & (actions <= 0.02)]
+
 
         sorted_idx = np.argsort(actions)
         energies_i = h_0[sorted_idx]
@@ -97,19 +99,30 @@ def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end, par):
         # ora confronta densità media (coerente con istogramma)
         bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
         L2 = np.sqrt(trapezoid((hist - P_H_bin)**2, bin_centers))
+        L2_theory = np.sqrt(trapezoid(P_H_bin**2))
 
+        L2_rel = L2 / (L2_theory + 1e-15)
+
+        """np.savez("curva_teorica_MB.npz",
+         bin_edges=bin_edges,
+         P_H_bin=P_H_bin,
+         actions_sorted_i=actions_sorted_i,
+         energies_i=energies_i)
+
+        print(np.min(actions), np.max(actions))
+    
         plt.hist(actions, bins=100, density=True, alpha=0.5, label="Distr. of actions")
         plt.plot(bin_centers, P_H_bin, label="Boltz. distribution")
-        plt.title(f"L2 norm: {L2:.2f}")
+        plt.title(f"L2 norm: {L2_rel:.4f}")
         plt.legend()
         plt.xlabel("I")
         plt.ylabel(r"$\rho(I)$")
-        #plt.savefig("../results/resonance11/center/last_hist_adiab_fcc.png")
-        plt.show()   
+        #plt.savefig("../results/resonance11/center/last_hist_adiab_als.png")
+        plt.show()"""
 
-        par.t = 0
+        #par.t = 0
              
-        init_data = np.load("../phasespace_stochastic/integrator/evolution_qp_10000_fcc.npz")
+        init_data = np.load("../phasespace_stochastic/integrator/evolution_qp_10000_fcc_use_for_relax.npz")
         q_init = init_data["q"]
         p_init = init_data["p"]
 
@@ -143,14 +156,15 @@ def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end, par):
         # ora confronta densità media (coerente con istogramma)
         bin_centers_in = 0.5 * (bin_edges_in[:-1] + bin_edges_in[1:])
         L2_in = np.sqrt(trapezoid((hist_in - P_H_bin_in)**2, bin_centers_in))
+        L2_theory_in = np.sqrt(trapezoid(P_H_bin_in**2))
 
+        L2_rel_in = L2_in / (L2_theory_in + 1e-15)
 
         fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
 
         # Primo istogramma (iniziale)
-        axes[0].hist(actions_init, bins=100, density=True, alpha=0.5, label="Distr. of actions")
+        """axes[0].hist(actions_init, bins=100, density=True, alpha=0.5, label="Distr. of actions")
         axes[0].plot(bin_centers_in, P_H_bin_in, label="Boltz. distribution")
-        axes[0].set_title(f"First hist\nL2 norm: {L2_in:.2f}")
         axes[0].set_xlabel("I")
         axes[0].set_ylabel(r"$\rho(I)$")
         axes[0].legend()
@@ -158,13 +172,37 @@ def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end, par):
         # Secondo istogramma (finale)
         axes[1].hist(actions, bins=100, density=True, alpha=0.5, label="Distr. of actions")
         axes[1].plot(bin_centers, P_H_bin, label="Boltz. distribution")
-        axes[1].set_title(f"Final hist\nL2 norm: {L2:.2f}")
-        axes[1].set_xlabel("Actions")
-        axes[1].legend()
+        axes[1].set_xlabel("")
+        axes[1].legend()"""
 
-        #plt.savefig("../results/resonance11/center/proof_adiab_inv_distr_actions_fcc.png")
+        
+        fontsize_title = 34
+        fontsize_label = 34
+        fontsize_tick = 24
+        fontsize_legend = 30
 
-        plt.show()"""
+        axes[0].hist(actions_init, bins=100, density=True, alpha=0.5, label=r"$\rho(I)$")
+        axes[0].plot(bin_centers_in, P_H_bin_in, label=r"$\rho_\text{MB}$", lw=3.5)
+        axes[0].set_title(rf"t = 0s", fontsize=fontsize_title)
+        axes[0].set_xlabel("I", fontsize=fontsize_label)
+        axes[0].set_ylabel(r"$\rho(I)$", fontsize=fontsize_label)
+        axes[0].tick_params(axis='both', labelsize=fontsize_tick)
+        axes[0].set_xlim(0, 0.01)
+        axes[0].set_ylim(0, 1000)
+        axes[0].legend(fontsize=fontsize_legend)
+
+        # Secondo istogramma (finale)
+        axes[1].hist(actions, bins=100, density=True, alpha=0.5, label=r"$\rho(I)$")
+        axes[1].plot(bin_centers, P_H_bin, label=r"$\rho_\text{MB}$", lw=3.5)
+        axes[1].set_title(rf"t = {t_final:.2f}s", fontsize=fontsize_title)
+        axes[1].set_xlabel("I", fontsize=fontsize_label)
+        axes[1].tick_params(axis='both', labelsize=fontsize_tick)
+        axes[1].set_xlim(0, 0.01)
+        axes[1].set_ylim(0, 1000)
+        axes[1].legend(fontsize=fontsize_legend)
+        
+
+        #plt.savefig("../results/resonance11/center/proof_adiab_inv_distr_actions_als.png")"""
 
         r"""par.t = t_final
 
@@ -203,20 +241,101 @@ def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end, par):
 
         I = ((x_isl - np.mean(x_isl))**2 + (y_isl - np.mean(y_isl))**2) / 2
         print(np.std(fn.H0_for_action_angle(q,p)), np.std(I * par.omega_lambda(par.t)))"""   
-        print(f"Trapped: {x_isl.shape[0]}, center: {x_cen.shape[0]}")
+        print(f"Trapped: {x_isl.shape[0]}, center: {x_cen.shape[0]}, nu_i: {par.nu_m_i}")
 
         n_isl = int(np.count_nonzero(mask))
         n_cen = int(np.count_nonzero(~mask))
 
-        #plt.scatter(x_cen, y_cen, s=5, alpha=1.0, color='C0', label=f"Center (N={n_cen})")
-        #plt.scatter(x_isl, y_isl, s=5, alpha=1.0, color='C1', label=f"Island (N={n_isl})")
-        #plt.scatter(x_ps, y_ps, s=1)
-        #plt.scatter(x, y, s=3)
-        #plt.xlabel("X", fontsize=16)
-        #plt.ylabel("Y", fontsize=16)
-        #plt.show()
+        x0_isl = np.mean(x_isl)
+        y0_isl = np.mean(y_isl)
 
-        np.savez(f"../results/resonance11/final_results/als/data/damp/{par.nu_m_i:.7f}_{par.nu_m_f:.3f}_{idx_start}_{idx_end}.npz", n_isl=n_isl)
+        x0_cen = np.mean(x_cen)
+        y0_cen = np.mean(y_cen)
+
+        X = np.vstack([x_cen - x0_cen, y_cen - y0_cen])  # shape (2, N)
+        Sigma = np.cov(X)                       # (2, 2)
+
+        X_points = X.T                          # (N, 2)
+        det_Sigma = np.linalg.det(Sigma)
+
+        Sigma_inv = np.linalg.inv(Sigma)
+
+        linear_J_cen = 0.5 * np.sqrt(det_Sigma) * np.einsum('ni,ij,nj->n', X_points, Sigma_inv, X_points)
+
+        X_isl = np.vstack([x_isl - x0_isl, y_isl - y0_isl])  # shape (2, N)
+        Sigma_isl = np.cov(X)                       # (2, 2)
+
+        X_points_isl = X_isl.T                          # (N, 2)
+        det_Sigma_isl = np.linalg.det(Sigma_isl)
+
+        Sigma_inv_isl = np.linalg.inv(Sigma_isl)
+
+        linear_J_isl = 0.5 * np.sqrt(det_Sigma_isl) * np.einsum('ni,ij,nj->n', X_points_isl, Sigma_inv_isl, X_points_isl)
+
+        fig, axes = plt.subplots(1, 2, figsize=(14, 6), sharey=False)
+
+        """axes[0].hist(linear_J_cen, bins=70, density=True)
+        axes[0].set_xlabel("I", fontsize=26)
+        axes[0].set_ylabel(r"$\rho(I)$", fontsize=26)
+        axes[0].set_xlim(0, 0.01)
+        axes[0].set_ylim(0, 1000)
+        #axes[0].set_yticks(np.linspace(0, 150, 10))
+        axes[0].tick_params(labelsize=18)
+        axes[0].set_title("Center", fontsize=24)
+
+        axes[1].hist(linear_J_isl, bins=70, density=True)
+        axes[1].set_xlabel("I", fontsize=26)
+        axes[1].set_ylabel(r"$\rho(I)$", fontsize=26)
+        axes[1].set_xlim(0, 0.1)
+        axes[1].set_ylim(0, 100)
+        #axes[1].set_yticks(np.linspace(0, 150, 10))
+        axes[1].tick_params(labelsize=18)
+        axes[1].set_title("Island", fontsize=24)
+
+        plt.suptitle(rf"Pr = 0.52, $\varepsilon = {par.epsilon * par.omega_s:.3f} \ s^{{-1}}, \nu_\text{{m, i}} = 0.9605, \nu_\text{{m, i}} = 0.83$", fontsize=30)
+        #plt.tight_layout(rect=[0, 0, 1, 0.95])
+        plt.show()
+
+
+        plt.hist(linear_J_cen, bins=100, density=True)
+        plt.xlabel("I", fontsize=26)
+        plt.ylabel(r"$\rho(I)$", fontsize=26)
+        plt.xlim(0, 0.1)   
+        plt.ylim(0, 150)  
+        plt.yticks(np.linspace(0, 150, 10))   
+        plt.tick_params(labelsize=18)
+        plt.title(rf"$\varepsilon = {par.epsilon * par.omega_s:.3f} \ s^{{-1}}, \nu_\text{{m, i}} = 0.9604, \nu_\text{{m, i}} = 0.83$", fontsize=30)
+        plt.show()
+
+
+        plt.hist(linear_J_isl, bins=100, density=True)
+        plt.xlabel("I", fontsize=26)
+        plt.ylabel(r"$\rho(I)$", fontsize=26)
+        plt.xlim(0, 0.1)   
+        plt.ylim(0, 150)  
+        plt.yticks(np.linspace(0, 150, 10))   
+        plt.tick_params(labelsize=18)
+        plt.title(rf"$\varepsilon = {par.epsilon * par.omega_s:.3f} \ s^{{-1}}, \nu_\text{{m, i}} = 0.9604, \nu_\text{{m, i}} = 0.83$", fontsize=30)
+        plt.show()"""
+
+
+        #dist = np.linalg.norm([x_fix_cen - x_fix_isl, y_fix_cen - y_fix_isl])
+        #print(f"dist: {dist:.4f}")
+
+        # per nu = 0.9605
+        # posizione punti fissi al 10%: cen=(-0.7237, -0.1533), isl=(1.3275, -0.591)
+        plt.figure(figsize=(8, 8))  # oppure (10, 10)
+
+        plt.scatter(x_cen, y_cen, s=5, alpha=1.0, color='C0', label=f"Center (N={n_cen})")
+        plt.scatter(x_isl, y_isl, s=5, alpha=1.0, color='C1', label=f"Island (N={n_isl})")
+        plt.scatter(x_ps, y_ps, s=1)
+        plt.scatter(x, y, s=3)
+        plt.xlabel("X", fontsize=16)
+        plt.ylabel("Y", fontsize=16)
+        plt.axis("equal")
+        plt.show()
+
+        #np.savez(f"../results/resonance11/final_results/fcc/data/{par.nu_m_i:.7f}_{par.nu_m_f:.3f}_{idx_start}_{idx_end}_ham_article.npz", n_isl=n_isl)
         #plt.xlim(-15, 15)
         #plt.ylim(-15, 15)
         #plt.tick_params(labelsize=18)
@@ -339,7 +458,7 @@ def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end, par):
 
             plt.show()"""
         
-        thetas = data["theta"]
+        """thetas = data["theta"]
         actions = data["actions"]
         thetaz = thetas[:, 0]
         actionz = actions[:, 0]
@@ -360,12 +479,23 @@ def plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end, par):
         thetaz = thetas[:, 1]
 
         plt.scatter(timez, thetaz, s=1)
-        plt.show()
+        plt.show()"""
 
-        plt.scatter(x_ps, y_ps, s=1)
-        plt.scatter(x[-1, :], y[-1, :], s=1)
-        plt.show()
+        time_data = np.load(f"integrator/evolved_qp_all_0_10000.npz")
 
+        times = time_data["t_list"]
+
+        idx_list = np.linspace(0, par.T_tot, x.shape[0])
+        #plt.scatter(x_ps, y_ps, s=1)
+        #plt.scatter(x, y, c=idx_list, cmap="viridis", s=1)
+        sc = plt.scatter(x, y, c=times, cmap="viridis", s=2)
+        cbar = plt.colorbar(sc)
+        cbar.ax.tick_params(labelsize=40) 
+        plt.xlabel("X", fontsize=40)
+        plt.ylabel("Y", fontsize=40)
+        plt.tick_params(labelsize=36)
+        cbar.set_label("Time [s]", fontsize=40)
+        plt.show()
     
 
 
@@ -449,7 +579,5 @@ if __name__ == "__main__":
     n_to_plot = int(sys.argv[3])
     idx_start = int(sys.argv[4])
     idx_end = int(sys.argv[5])
-    params_path = sys.argv[6] if len(sys.argv) > 6 else "params.yaml"
-    par = params.load_params(params_path)
 
-    plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end, par)
+    plot(poincare_mode, n_particles, n_to_plot, idx_start, idx_end)

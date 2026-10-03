@@ -3,15 +3,18 @@ import sys
 import numpy as np
 from tqdm.auto import tqdm
 
-import params
+import params_fcc as par
 import functions as fn
 
-def run_action_angle(poincare_mode, idx_start, idx_end, par):
+def run_action_angle(poincare_mode, idx_start, idx_end):
     data = np.load(f"integrator/evolved_qp_{poincare_mode}_{idx_start}_{idx_end}.npz")
-    fn.par = par
 
     q = data['q']
     p = data['p']
+    t_list = data["t_list"]
+
+    #q = q[:, np.newaxis]
+    #p = p[:, np.newaxis]
 
     if poincare_mode == "all":
         n_steps, n_particles = q.shape
@@ -70,7 +73,7 @@ def run_action_angle(poincare_mode, idx_start, idx_end, par):
         x = np.sqrt(2 * np.array(actions_list)) * np.cos(theta_list)
         y = - np.sqrt(2 * np.array(actions_list)) * np.sin(theta_list) * np.array(sign_list)
 
-    return x, y, actions_list, theta_list
+    return x, y, actions_list, theta_list, t_list
 
 
 # --------------- Save results ----------------
@@ -80,9 +83,7 @@ if __name__ == "__main__":
     poincare_mode = sys.argv[1]
     idx_start = int(sys.argv[2])
     idx_end = int(sys.argv[3])
-    params_path = sys.argv[4] if len(sys.argv) > 4 else "params.yaml"
-    par = params.load_params(params_path)
-    x, y, actions_list, theta_list = run_action_angle(poincare_mode, idx_start, idx_end, par)
+    x, y, actions_list, theta_list, t_list = run_action_angle(poincare_mode, idx_start, idx_end)
     
     a_start = par.a_lambda(par.T_percent)
     omega_start = par.omega_lambda(par.T_percent)
@@ -101,4 +102,4 @@ if __name__ == "__main__":
         os.makedirs(output_dir)
 
     file_path = os.path.join(output_dir, f"{poincare_mode}_{str_title}_{idx_start}_{idx_end}.npz")
-    np.savez(file_path, x=x, y=y, actions=actions_list, theta=theta_list)
+    np.savez(file_path, x=x, y=y, actions=actions_list, theta=theta_list, t_list=t_list)

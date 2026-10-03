@@ -3,7 +3,7 @@ from scipy.optimize import brentq
 from scipy.special import ellipk, ellipe
 from sage.functions.jacobi import inverse_jacobi, jacobi
 
-par = None
+import params_fcc as par
 
 # ------------------ functions -------------------------
 
@@ -50,10 +50,11 @@ def compute_phi_delta(Q, P):
     phi = par.lambd * Q - np.pi
     return phi, delta
 
+def Delta_q_fixed(p, psi, a, omega_m, dt):
+    return par.lambd**2 * p * dt + a * omega_m * np.cos(psi) * dt
+
 def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq): 
-    #print(par.a_lambda(par.t))
-    #par.damp_rate = 0
-    #par.D = 0
+    #print(f"{par.a_lambda(t) * par.omega_lambda(t):.4f}, {par.a_lambda(t):.3f}, {par.omega_lambda(t)/par.omega_s:.4f}")
 
     q += Delta_q(p, psi, t, dt/2)
     q = np.mod(q, 2 * np.pi)        
@@ -61,6 +62,15 @@ def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq):
     p += dt * dV_dq(q) - dt * 2 * par.damp_rate * p / par.beta**2 + np.sqrt(dt) * par.D * np.random.normal(0, 1, size=p.shape) 
     q += Delta_q(p, psi, t_mid, dt/2)
     q = np.mod(q, 2 * np.pi)     
+
+    return q, p
+
+def integrator_step_fixed(q, p, psi, a, omega_m, dt, Delta_q_fixed, dV_dq):
+    q += Delta_q_fixed(p, psi, a, omega_m, dt/2)
+    q = np.mod(q, 2 * np.pi)        
+    p += dt * dV_dq(q)
+    q += Delta_q_fixed(p, psi, a, omega_m, dt/2)
+    q = np.mod(q, 2 * np.pi)
 
     return q, p
 
@@ -113,9 +123,9 @@ def H_resonant(q, p, x, y, x0, y0, k2):
     return H0_for_action_angle(q, p) + par.epsilon_function(par.t) * G_of_I * np.cos(angle - psi) - I * par.omega_lambda(par.t)
 
 def trapping_prob():
-    t_star = 3.2
+    t_star = 3.3
     I_res = 0.795
-    k2 = 0.1502
+    k2 = 0.402
 
     k_prime = np.sqrt(1 - k2)
     q_param = np.exp(- np.pi * ellipk(k_prime**2) / ellipk(k2)) 

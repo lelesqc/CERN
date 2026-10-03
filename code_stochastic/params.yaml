@@ -1,14 +1,15 @@
-epsilon_i: 0.0240125
+#epsilon: 0.026
+epsilon_i: 0.0415
 epsilon_f: 0.0415
-nu_m_i: 0.9625000
 nu_m_f: 0.83
+nu_m_i: 0.83
+#nu_m_i: 0.9594
 
-#epsilon_i: 0.0125
+# FCC stocastico: intervallo circa 0.959 - 0.9617
+# FCC ham: intervallo circa 0.9575 - 0.96
+
+
 #epsilon_f: 0.025
-#nu_m_i: 0.50
-#nu_m_f: 0.50
-
-#epsilon_i: 0.0240406
-#epsilon_f: 0.0415
-#nu_m_i: 0.9616250
-#nu_m_f: 0.83
+#epsilon_i: 0.0125
+#nu_m_f: 0.5
+#nu_m_i: 0.5
