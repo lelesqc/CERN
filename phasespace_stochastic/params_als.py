@@ -50,7 +50,6 @@ class Params:
             config = yaml.safe_load(f)
         self.epsilon = config["epsilon"]
         self.nu_m = config["nu_m"]
-        self.sigma = config.get("sigma", 1.0)
 
         # ------------- variables -----------------
         

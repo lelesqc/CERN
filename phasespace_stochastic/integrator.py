@@ -89,6 +89,10 @@ if __name__ == "__main__":
     init_type = sys.argv[1]
     mode = sys.argv[2]
     n_particles = sys.argv[3]
+
+    seed = int(os.environ.get("SEED", "12345"))
+    np.random.seed(seed)
+
     q, p, psi, time = run_integrator(init_type, mode, n_particles)
 
     output_dir = "integrator"

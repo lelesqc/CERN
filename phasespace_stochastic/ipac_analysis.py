@@ -576,16 +576,16 @@ import os
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
-import params_als as params
+import params_fcc_ww as params
 from scipy.optimize import curve_fit
 
 par = params.Params()
 
-folder_type = "nu"  # Options: "eps", "nu"
+folder_type = "eps"  # Options: "eps", "nu"
 
 if folder_type == "eps":
-    folder_path = "./final_data_otherconfig/ww/eps_0.065"
-    param_values = np.linspace(0.850, 0.900, 11)
+    folder_path = "./final_data_otherconfig/ww/eps_0.0650"
+    param_values = np.linspace(0.850, 0.900, 16)
     
     title_text = r'$\varepsilon = 0.065$'
     xlabel_text = r'$\nu_\mathrm{m}$'

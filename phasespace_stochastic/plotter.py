@@ -32,17 +32,18 @@ def plot(mode, n_particles, config):
         plt.yticks(fontsize=16)
         plt.tight_layout()
 
-        name_dir = f"nu_{par.nu_m:.2f}"
-        #name_dir = f"eps_{par.epsilon:.3f}"
-        #param_val = f"nu_{par.nu_m:.3f}"
-        param_val = f"eps_{par.epsilon:.4f}"
+        #name_dir = f"nu_{par.nu_m:.2f}"        
+        #param_val = f"eps_{par.epsilon:.4f}"
+
+        name_dir = f"eps_{par.epsilon:.4f}"
+        param_val = f"nu_{par.nu_m:.3f}"
 
         dir_path = Path(f"./final_data_otherconfig/{config}/{name_dir}")
         dir_path.mkdir(parents=True, exist_ok=True)
 
-        #np.savez(dir_path / f"isl_{param_val}.npz", x=x, y=y)
+        np.savez(dir_path / f"isl_{param_val}.npz", x=x, y=y)
 
-        plt.show()
+        #plt.show()
     
     if mode == "phasespace":
         data = np.load(f"action_angle/phasespace_{n_particles}_a{par.a:.7f}_nu{par.omega_m/par.omega_s:.5f}_{machine}_{config}.npz")

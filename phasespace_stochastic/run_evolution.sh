@@ -22,6 +22,9 @@ elif [ "$MACHINE" == "ALS" ]; then
     GRID_LIM=6
 fi
 
+SEED="${SEED:-12345}"
+export SEED
+
 export MACHINE
 export PARAMS_MODULE
 export MODULATION
@@ -30,7 +33,7 @@ export CONFIG
 
 echo "Evolving the system..."
 
-python generate_init_conditions.py ${INIT_COND} ${GRID_LIM} ${SIGMA} ${PARTICLES}
+python generate_init_conditions.py ${INIT_COND} ${GRID_LIM} ${PARTICLES}
 python integrator.py ${INIT_COND} ${MODE} ${PARTICLES}
 python action_angle.py ${MODE} ${PARTICLES} ${CONFIG}
 #python tune.py ${MODE} ${PARTICLES}

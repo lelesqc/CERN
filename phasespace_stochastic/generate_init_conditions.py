@@ -231,13 +231,13 @@ def generate_gaussian(n_particles):
     q_init = np.array(phi)
     p_init = np.array(delta)
     
-    phasespace = np.load(f"action_angle/phasespace_75_a{par.a:.7f}_nu{par.omega_m/par.omega_s:.5f}_{machine}_{config}.npz")
+    """phasespace = np.load(f"action_angle/phasespace_75_a{par.a:.7f}_nu{par.omega_m/par.omega_s:.5f}_{machine}_{config}.npz")
     x_ps = phasespace["x"]
     y_ps = phasespace["y"]
 
     plt.scatter(x_ps, y_ps, s=1)
     plt.scatter(X_list, Y_list, s=1)
-    plt.show()
+    plt.show()"""
 
     return q_init, p_init
 
@@ -248,17 +248,6 @@ def load_data_qp(filename):
 
     q_init = np.array(q)
     p_init = np.array(p)
-
-    phasespace_qp = np.load(f"./integrator/phasespace_qp_150_{machine}.npz")
-    q_ps = phasespace_qp["q"]
-    p_ps = phasespace_qp["p"]
-    
-    """q_init += 1
-    p_init += - np.min(p_init) + np.max(p_ps) + 0.001
-
-    plt.scatter(q_ps, p_ps, s=1)
-    plt.scatter(q_init, p_init, s=1)
-    plt.show()"""
 
     return q_init, p_init
 
@@ -296,14 +285,6 @@ def load_data_xy(filename):
     q_init = phi
     p_init = delta
 
-    """phasespace_qp = np.load(f"./integrator/phasespace_qp_150_{machine}.npz")
-    q_ps = phasespace_qp["q"]
-    p_ps = phasespace_qp["p"]
-
-    plt.scatter(q_ps, p_ps, s=1)
-    plt.scatter(q_init, p_init, s=1)
-    plt.show()"""
-
     return q_init, p_init
 
 # ---------------------------------------
@@ -314,9 +295,11 @@ if __name__ == "__main__":
     
     init_type = sys.argv[1]
     grid_lim = float(sys.argv[2])
-    sigma = float(sys.argv[3])
-    n_particles = int(sys.argv[4])
-    loaded_data = sys.argv[5] if len(sys.argv) > 5 else None   
+    n_particles = int(sys.argv[3])
+    loaded_data = sys.argv[4] if len(sys.argv) > 5 else None   
+
+    seed = int(os.environ.get("SEED", "12345"))
+    np.random.seed(seed)
 
     if loaded_data is not None:
         #q_init, p_init = load_data_xy(loaded_data)

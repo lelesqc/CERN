@@ -55,12 +55,10 @@ def compute_phi_delta(Q, P):
     return phi, delta
 
 def integrator_step(q, p, psi, t, dt, Delta_q, dV_dq, par):
-    sigma = getattr(par, "sigma", 1.0)
-
     q += Delta_q(p, psi, t, dt/2, par)
     q = np.mod(q, 2 * np.pi)        
     t_mid = t + dt/2
-    p += dt * dV_dq(q, par) - dt * 2 * par.damp_rate * p / par.beta**2 + np.sqrt(dt) * par.D * np.random.normal(0, sigma, size=p.shape) 
+    p += dt * dV_dq(q, par) - dt * 2 * par.damp_rate * p / par.beta**2 + np.sqrt(dt) * par.D * np.random.normal(0, 1, size=p.shape) 
     q += Delta_q(p, psi, t_mid, dt/2, par)
     q = np.mod(q, 2 * np.pi)     
 
