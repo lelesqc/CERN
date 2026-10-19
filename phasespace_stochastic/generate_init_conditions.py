@@ -132,7 +132,7 @@ def generate_circle(radius, n_particles):
 
     return q_init, p_init
 
-def generate_gaussian(sigma, n_particles, x_center):
+def generate_gaussian(n_particles):
     X_list = []
     Y_list = []
     action_list = []
@@ -141,7 +141,6 @@ def generate_gaussian(sigma, n_particles, x_center):
     region = "cen"
 
     name_dir = f"eps_{par.epsilon:.3f}"
-    #name_dir = f"nu_0.87"
     freq = f"nu_{par.nu_m:.2f}"
     
     dir_path = Path(f"./other_config/{config}/{freq}/{name_dir}")
@@ -150,16 +149,9 @@ def generate_gaussian(sigma, n_particles, x_center):
     name_dir = "eps_0.028"
     freq = "nu_0.87"
 
-    #data_relax = np.load(f"./other_config/als/{name_dir}/{freq}/fixed_point_{region}.npz")
-    data_relax = np.load(f"./other_config/{config}/{freq}/{name_dir}/fixed_point_{region}.npz")
+    x_center = 0
+    y_center = 0
 
-    x_center = data_relax["x"]
-    y_center = data_relax["y"]
-
-    #x_center = 0
-    #y_center = 0
-
-    #base_dir = "./ipac_simulations/eps_0.028"
     base_dir = f"./other_config/{config}/{freq}"
     npz_path = os.path.join(base_dir, "eps_0.028", f"final_distr_{region}.npz")
     data = np.load(npz_path)   
@@ -193,7 +185,10 @@ def generate_gaussian(sigma, n_particles, x_center):
         X_try = X_try[mask]
         Y_try = Y_try[mask]
 
-        X_try += 4
+        if config == "als":
+            X_try += 6
+        else:
+            X_try += 4
         Y_try -= 1
 
         action_try, theta_try = fn.compute_action_angle_inverse(X_try, Y_try)
@@ -214,8 +209,6 @@ def generate_gaussian(sigma, n_particles, x_center):
     Y_list = np.array(Y_list[:n_particles])
     action = np.array(action_list[:n_particles])
     theta = np.array(theta_list[:n_particles])
-
-    #X_list += 4
 
     kappa_squared_list = np.empty(n_particles)
     Omega_list = np.empty(n_particles)
@@ -238,13 +231,13 @@ def generate_gaussian(sigma, n_particles, x_center):
     q_init = np.array(phi)
     p_init = np.array(delta)
     
-    """phasespace = np.load(f"action_angle/phasespace_75_a{par.a:.7f}_nu{par.omega_m/par.omega_s:.5f}_{machine}_{config}.npz")
+    phasespace = np.load(f"action_angle/phasespace_75_a{par.a:.7f}_nu{par.omega_m/par.omega_s:.5f}_{machine}_{config}.npz")
     x_ps = phasespace["x"]
     y_ps = phasespace["y"]
 
     plt.scatter(x_ps, y_ps, s=1)
     plt.scatter(X_list, Y_list, s=1)
-    plt.show()"""
+    plt.show()
 
     return q_init, p_init
 
@@ -330,7 +323,7 @@ if __name__ == "__main__":
         q_init, p_init = load_data_qp(loaded_data)
 
     elif init_type == "gaussian":
-        q_init, p_init = generate_gaussian(sigma, n_particles, 0)
+        q_init, p_init = generate_gaussian(n_particles)
     elif init_type == "circle":
         q_init, p_init = generate_circle(grid_lim, n_particles)
     elif init_type == "grid":

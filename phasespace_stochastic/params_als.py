@@ -4,8 +4,8 @@ import os
 
 class Params:
     def __init__(self, config_path="params.yaml"):
-        modulation = os.environ.get("MODULATION").lower()
-        thermal_bath = os.environ.get("THERMAL_BATH").lower()
+        modulation = os.environ.get("MODULATION")
+        thermal_bath = os.environ.get("THERMAL_BATH")
 
         # ------------ machine ----------------
         self.full_radius = 31.32

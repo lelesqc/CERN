@@ -18,7 +18,6 @@ def run_action_angle(mode, n_particles):
   q = data['q']
   p = data['p']
 
-  # Ricava il numero REALE di particelle dal file caricato
   actual_n_particles = q.shape[-1] if q.ndim > 1 else q.shape[0]
 
   if q.ndim == 1:
@@ -28,7 +27,6 @@ def run_action_angle(mode, n_particles):
   else:
     n_steps = q.shape[0]
 
-  # Inizializza le matrici con la dimensione corretta (actual_n_particles)
   actions_list = np.zeros((n_steps, actual_n_particles))
   energies = np.zeros((n_steps, actual_n_particles))
   vars = np.zeros(n_steps)

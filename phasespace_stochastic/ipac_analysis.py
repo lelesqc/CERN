@@ -576,7 +576,7 @@ import os
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
-import params_fcc_ww as params
+import params_als as params
 from scipy.optimize import curve_fit
 
 par = params.Params()
@@ -593,8 +593,8 @@ if folder_type == "eps":
     var_symbol = r'\nu_\mathrm{m}'
 
 elif folder_type == "nu":
-    folder_path = "./final_data_otherconfig/ww/nu_0.85"
-    param_values = np.linspace(0.060, 0.075, 16) * par.omega_s
+    folder_path = "./final_data_otherconfig/als/nu_0.85"
+    param_values = np.linspace(0.020, 0.050, 16) * par.omega_s
     
     title_text = r'$\nu_\mathrm{m} = 0.85$'
     xlabel_text = r'$\varepsilon$'
@@ -656,41 +656,47 @@ print("exp + offset:      ", np.round(po, 3), "err:", np.round(np.sqrt(np.diag(p
 x_fit = np.linspace(param_values.min(), param_values.max(), 200)
 
 if folder_type == "eps":
-    y_scaled = emittance_array * 1e3 
-    m, q = np.polyfit(param_values, emittance_array, 1)
-    
-    fit_line = m * param_values + q
-    y_plot_fit = fit_line * 1e3
-    
-    m_scaled = m * 1e3
-    q_scaled = q * 1e3
+    y_scaled = emittance_array * 1e3
+
+    m_scaled, q_scaled = np.polyfit(param_values, y_scaled, 1)
+
+    y_plot_fit = m_scaled * param_values + q_scaled
+
     sign_q = "+" if q_scaled >= 0 else "-"
-    eq_label = fr'${m_scaled:.1f} \cdot 10^{{-3}} \cdot \nu_\mathrm{{m}} {sign_q} {abs(q_scaled):.1f} \cdot 10^{{-3}}$'
-    
+    eq_label = fr'${m_scaled:.1f} \cdot \nu_\mathrm{{m}} {sign_q} {abs(q_scaled):.1f}$'
+
     x_plot_fit = param_values
     y_plot_scatter = y_scaled
-    y0_line = None # Nessun asintoto per il caso lineare
+    y0_line = None
 
 elif folder_type == "nu":
     def fit_powerlaw_asympt(x, y0, A, b):
         return y0 + A * (x ** b)
 
-    p0 = [0.0021, 0.1, -1.7] 
+    y0_init = ys.min() * 0.8                  
+    b_init = -2                             
+    A_init = (ys.max() - y0_init) * (xs.mean() ** abs(b_init))
     
-    popt, _ = curve_fit(fit_powerlaw_asympt, param_values, emittance_array, p0=p0, maxfev=10000)
+    p0 = [y0_init, A_init, b_init]
+
+    bounds = ([0.0, 0.0, -15.0], [ys.min(), np.inf, -0.1])
+
+    popt, _ = curve_fit(fit_powerlaw_asympt, xs, ys, p0=p0, bounds=bounds, maxfev=20000)
     y0_fit, A_fit, b_fit = popt
 
-    print(y0_fit, A_fit, b_fit)
-    
+    print(f"Risultati Fit ALS -> y0: {y0_fit:.4f}, A: {A_fit:.3e}, b: {b_fit:.3f}")
+
+    # Punti per il plot
     x_plot_fit = x_fit
-    y_plot_fit_raw = fit_powerlaw_asympt(x_fit, y0_fit, A_fit, b_fit)
+    y_plot_fit = fit_powerlaw_asympt(x_fit, y0_fit, A_fit, b_fit)
     
-    y_plot_scatter = emittance_array * 1000
-    y_plot_fit = y_plot_fit_raw * 1000
-    y0_line = y0_fit * 1000
-    A_scaled = A_fit * 1000
-    A_str = f"{A_scaled:.1e}".replace("e+", r" \cdot 10^{")
-    eq_label = rf"${y0_fit*1000:.2f} \cdot 10^{{-3}} + ({A_str}}} \cdot 10^{{-3}} \ \text{{s}}^{{{b_fit:.2f}}}) \cdot (a \omega_\text{{m}})^{{ {b_fit:.2f} }}$"
+    y_plot_scatter = ys
+    y0_line = y0_fit
+
+    A_str = f"{A_fit:.1e}".replace("e+0", r" \cdot 10^{").replace("e+", r" \cdot 10^{")
+    eq_label = rf"${y0_fit:.2f} + ({A_str}}} \ \text{{s}}^{{{b_fit:.2f}}}) \cdot (a \omega_\text{{m}})^{{ {b_fit:.2f} }}$"
+    #eq_label = rf"${y0_fit:.2f} + ({A_str}}} \ \text{{s}}^{{-1.3}}) \cdot (a \omega_\text{{m}})^{{-1.3}}$"
+
 
 # --- 3. Creazione Grafico ---
 plt.figure(figsize=(10, 5))
@@ -716,12 +722,89 @@ plt.legend(fontsize=18)
 plt.grid(False)
 plt.tight_layout()
 
-# output_dir = "./../../Desktop/plots/FCC_ee_WW"
-# os.makedirs(output_dir, exist_ok=True)
-# output_path = os.path.join(output_dir, filename_out)
-# plt.savefig(output_path, dpi=300, bbox_inches='tight')
+output_dir = "./../../Desktop/plots/FCC_ee_WW"
+os.makedirs(output_dir, exist_ok=True)
+output_path = os.path.join(output_dir, filename_out)
+#plt.savefig(output_path, dpi=300, bbox_inches='tight')
 
 plt.show()
 
 
+# %% --- 1. Grafico Log-Log (sottraendo l'asintoto y0_line) ---
+
+# Differenza tra dati scalati e asintoto scalato
+y_diff = ys - y0_line
+
+# Filtro per considerare solo valori positivi nel logaritmo
+mask = y_diff > 0
+x_log = xs[mask]
+y_log = y_diff[mask]
+
+# Fit lineare nello spazio logaritmico: log(y_diff) = b * log(x) + log(A)
+log_x = np.log(x_log)
+log_y = np.log(y_log)
+b_log, log_A = np.polyfit(log_x, log_y, 1)
+
+plt.figure(figsize=(8, 5))
+
+# Dati sperimentali traslati dall'asintoto
+plt.loglog(x_log, y_log, 'bo', markersize=8, label=r'Dati - $y_0$')
+
+# Curva di fit nello spazio logaritmico
+x_log_line = np.linspace(x_log.min(), x_log.max(), 200)
+y_log_fit = np.exp(log_A) * (x_log_line ** b_log)
+plt.plot(x_log_line, y_log_fit, 'r--', linewidth=2, 
+         label=fr'Fit Log-Log ($b = {b_log:.2f}$)')
+
+plt.xlabel(r"$a \omega_\text{m}$ [$\text{s}^{-1}$]", fontsize=18)
+plt.ylabel(r"Equilibrium emittance - $y_0$ [$10^{-3}$]", fontsize=18)
+plt.xticks(fontsize=16)
+plt.yticks(fontsize=16)
+plt.grid(True, which="both", ls="--", alpha=0.6)
+plt.legend(fontsize=16)
+plt.tight_layout()
+
+plt.show()
+
+
+# %% --- 2. Scansione Chi^2 vs Esponente b ---
+
+# Intervallo di esponenti b da esplorare
+b_vals = np.linspace(-10.0, -2, 300)
+chi2_list = []
+
+for b_fixed in b_vals:
+    # Modello con b fisso: si fittano soltanto l'asintoto y0 e l'ampiezza A sui dati scalati ys
+    def model_fixed_b(x, y0, A):
+        return y0 + A * (x ** b_fixed)
+    
+    try:
+        # p0 basato sui valori reali: [y0_line, ampiezza_iniziale]
+        popt_fixed, _ = curve_fit(model_fixed_b, xs, ys, p0=[y0_line, 1e10], maxfev=10000)
+        y_pred = model_fixed_b(xs, *popt_fixed)
+        # Calcolo della somma dei quadrati dei residui (proporzionale al Chi^2)
+        chi2 = np.sum((ys - y_pred) ** 2)
+    except RuntimeError:
+        chi2 = np.nan
+        
+    chi2_list.append(chi2)
+
+chi2_arr = np.array(chi2_list)
+
+plt.figure(figsize=(8, 5))
+plt.plot(b_vals, chi2_arr, 'b-', linewidth=2.5, label=r'$\chi^2$ (Somma quadrati residui)')
+
+# Evidenziamo con una linea verticale il valore b_fit ottenuto dal fit libero
+plt.axvline(x=b_fit, color='r', linestyle='--', linewidth=2, 
+            label=fr'Minimo libero ($b = {b_fit:.2f}$)')
+
+plt.xlabel(r'Esponente $b$', fontsize=18)
+plt.ylabel(r'$\chi^2$ (A.U.)', fontsize=18)
+plt.xticks(fontsize=16)
+plt.yticks(fontsize=16)
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.legend(fontsize=16)
+plt.tight_layout()
+
+plt.show()
 # %%

@@ -1,12 +1,10 @@
 #!/bin/bash
 
-SIGMA=0.3
 MACHINE="FCC"    # FCC, ALS
 INIT_COND="gaussian"   # gaussian, circle, grid, grid_big
 PARTICLES=10000
 CONFIG=ww    # ww, zh, tt
 MODE="evolution"    # phasespace, evolution
-DATA_FILE="./integrator/${MODE}_qp_${PARTICLES}_${MACHINE}_relaxed_1.00.npz"
 
 MODULATION="yes"    
 THERMAL_BATH="yes"
@@ -20,6 +18,7 @@ if [ "$MACHINE" == "FCC" ]; then
 elif [ "$MACHINE" == "ALS" ]; then
     DATA_SUFFIX="als"
     PARAMS_MODULE="params_als"
+    CONFIG="als"
     GRID_LIM=6
 fi
 
