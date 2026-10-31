@@ -152,9 +152,11 @@ def generate_gaussian(n_particles):
     x_center = 0
     y_center = 0
 
-    base_dir = f"./other_config/{config}/{freq}"
+    config_name="ww"
+
+    base_dir = f"./other_config/{config_name}/{freq}"
     npz_path = os.path.join(base_dir, "eps_0.028", f"final_distr_{region}.npz")
-    data = np.load(npz_path)   
+    data = np.load(npz_path)    
 
     x = data["x"]
     y = data["y"]  
@@ -187,6 +189,8 @@ def generate_gaussian(n_particles):
 
         if config == "als":
             X_try += 6
+        elif config == "z":
+            X_try += 2 
         else:
             X_try += 4
         Y_try -= 1

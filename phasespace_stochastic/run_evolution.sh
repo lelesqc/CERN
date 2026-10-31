@@ -1,19 +1,22 @@
 #!/bin/bash
 
 MACHINE="FCC"    # FCC, ALS
-INIT_COND="gaussian"   # gaussian, circle, grid, grid_big
-PARTICLES=10000
-CONFIG=ww    # ww, zh, tt
-MODE="evolution"    # phasespace, evolution
+INIT_COND="grid"   # gaussian, circle, grid, grid_big
+PARTICLES=75
+CONFIG="zh"    # z, ww, zh, tt
+MODE="phasespace"    # phasespace, evolution
 
 MODULATION="yes"    
-THERMAL_BATH="yes"
+THERMAL_BATH="no"
 
 if [ "$MACHINE" == "FCC" ]; then
     DATA_SUFFIX="fcc"
     PARAMS_MODULE="params_fcc_${CONFIG}"
-    #GRID_LIM=0.2
-    GRID_LIM=5.0
+    if [ "$CONFIG" == "z" ]; then 
+        GRID_LIM=3.0
+    else
+        GRID_LIM=5.0
+    fi
 
 elif [ "$MACHINE" == "ALS" ]; then
     DATA_SUFFIX="als"

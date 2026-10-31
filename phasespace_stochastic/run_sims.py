@@ -4,17 +4,17 @@ import numpy as np
 import os
 import importlib
 
-os.environ["MACHINE"] = "FCC"
+os.environ["MACHINE"] = "ALS"
 os.environ["MODULATION"] = "yes"
 os.environ["THERMAL_BATH"] = "yes"
-os.environ["PARAMS_MODULE"] = "params_fcc_ww"
+os.environ["PARAMS_MODULE"] = "params_als"
 
 params_module = os.environ.get("PARAMS_MODULE")
 params = importlib.import_module(params_module)
 par = params.Params()
 
-nu_ms = np.linspace(.85, .90, 16)
-#epsilons = np.linspace(.060, .075, 16)
+nu_ms = np.linspace(.84, .88, 16)
+#epsilons = np.linspace(.065, .080, 16)
 epsilons = np.linspace(.020, .050, 16)
 
 var_to_scan = "nu_m"

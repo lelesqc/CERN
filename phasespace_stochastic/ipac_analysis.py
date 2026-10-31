@@ -19,7 +19,7 @@ if folder_type == "eps":
 
 elif folder_type == "nu":
     folder_path = "./final_data_otherconfig/ww/nu_0.85"
-    param_values = np.linspace(0.065, 0.075, 11) * par.omega_s
+    param_values = np.linspace(0.065, 0.075, 16) * par.omega_s
     
     title_text = r'$\nu_\mathrm{m} = 0.85$'
     xlabel_text = r'$\varepsilon$'
@@ -572,148 +572,200 @@ check_moment("<x^3 y^2>", np.mean(x**3 * y**2) / (sx**3 * sy**2), 0.0)
 
 # %%
 
+
 import os
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
-import params_fcc_ww as params
 from scipy.optimize import curve_fit
 
-par = params.Params()
+from params_fcc_ww import Params
+par = Params()
 
-folder_type = "eps"  # Options: "eps", "nu"
+folder_type = "eps"
+
+# --------------------------------------------------
+# Configurazione
+# --------------------------------------------------
 
 if folder_type == "eps":
     folder_path = "./final_data_otherconfig/ww/eps_0.0650"
     param_values = np.linspace(0.850, 0.900, 16)
-    
-    title_text = r'$\varepsilon = 0.065$'
-    xlabel_text = r'$\nu_\mathrm{m}$'
+
+    epsilon_title = 0.065 * par.omega_s
+
+    xlabel = r"$\nu_{\mathrm{m}}$"
+    title = r"$a\omega_\mathrm{m} = 853.7\,\mathrm{{s^{{-1}}}}$"
     filename_out = "eq_emittance_fixed_eps.png"
-    var_symbol = r'\nu_\mathrm{m}'
 
 elif folder_type == "nu":
-    folder_path = "./final_data_otherconfig/als/nu_0.85"
-    param_values = np.linspace(0.020, 0.050, 16) * par.omega_s
-    
-    title_text = r'$\nu_\mathrm{m} = 0.85$'
-    xlabel_text = r'$\varepsilon$'
+
+    folder_path = "./final_data_otherconfig/als/nu_0.850"
+
+    epsilon_values = np.linspace(0.020, 0.050, 16)
+
+    param_values = epsilon_values * par.omega_s
+
+    xlabel = r"$\omega_{\mathrm{m}}$ [$\mathrm{s}^{-1}$]"
+    title = r"$\nu_{\mathrm{m}} = 0.85$"
     filename_out = "eq_emittance_fixed_nu.png"
-    var_symbol = r'\varepsilon'
 
 else:
-    raise ValueError("'eps' or 'nu'")
+    raise ValueError("folder_type deve essere 'eps' oppure 'nu'")
+
+# --------------------------------------------------
+# Caricamento e calcolo dell'emittanza
+# --------------------------------------------------
+
+file_list = sorted(glob.glob(os.path.join(folder_path, "*.npz")))
+
+if len(file_list) != len(param_values):
+    raise ValueError(
+        f"Trovati {len(file_list)} file, ma sono attesi "
+        f"{len(param_values)} punti."
+    )
 
 emittance_list = []
-file_list = sorted(glob.glob(os.path.join(folder_path, "*.npz")))
 
 for file_path in file_list:
     with np.load(file_path) as data:
-        x = data['x']
-        y = data['y']
-    
+        x = data["x"]
+        y = data["y"]
+
     x_data = x if x.ndim == 1 else x[-1, :]
     y_data = y if y.ndim == 1 else y[-1, :]
-    
-    x0 = np.mean(x_data)
-    y0 = np.mean(y_data)
-    
-    X = np.vstack([x_data - x0, y_data - y0])
-    Sigma = np.cov(X)
-    emittance = np.sqrt(np.linalg.det(Sigma))
+
+    X = np.vstack([
+        x_data - np.mean(x_data),
+        y_data - np.mean(y_data)
+    ])
+
+    covariance = np.cov(X)
+    emittance = np.sqrt(np.linalg.det(covariance))
     emittance_list.append(emittance)
 
-emittance_array = np.array(emittance_list)
+ys = np.asarray(emittance_list) * 1e3
+xs = np.asarray(param_values)
 
-xs = np.asarray(param_values)          
-ys = emittance_array * 1e3             
-xn = xs.mean()                         
+for filename, xv, yv in zip(file_list, xs, ys):
+    print(f"{os.path.basename(filename):40s} x={xv:.6g}  eps_eq={yv:.5f}")
 
-print("N file:", len(file_list), " N param:", len(xs))
-for fn, xv, yv in zip(file_list, xs, ys):
-    print(f"{os.path.basename(fn):40s}  x={xv:6.2f}  y={yv:.4f}")
-
-print("\nProfilo su y0:")
-for y0_fix in [1.0, 1.5, 1.8, 2.0, 2.06, 2.15]:
-    f = lambda x, B, p: y0_fix + B * (x / xn) ** p
-    po, _ = curve_fit(f, xs, ys, p0=[ys.mean() - y0_fix, -1], maxfev=20000)
-    rms = np.sqrt(np.mean((ys - f(xs, *po)) ** 2))
-    print(f"y0={y0_fix:.2f}  B={po[0]:.3f}  p={po[1]:.2f}  RMS={rms:.4f}")
-
-def pl_off(x, y0, B, p):  return y0 + B * (x / xn) ** p
-def exp_off(x, y0, B, lam): return y0 + B * np.exp(-(x - xn) / lam)
-
-po, pc = curve_fit(pl_off, xs, ys, p0=[2.0, 0.5, -2], maxfev=20000)
-print("\npower-law + offset:", np.round(po, 3), "err:", np.round(np.sqrt(np.diag(pc)), 3),
-      "RMS:", round(np.sqrt(np.mean((ys - pl_off(xs, *po)) ** 2)), 4))
-
-po, pc = curve_fit(exp_off, xs, ys, p0=[2.0, 0.5, 10], maxfev=20000)
-print("exp + offset:      ", np.round(po, 3), "err:", np.round(np.sqrt(np.diag(pc)), 3),
-      "RMS:", round(np.sqrt(np.mean((ys - exp_off(xs, *po)) ** 2)), 4))
-
-# --- Linear/Power fit ---
-
-x_fit = np.linspace(param_values.min(), param_values.max(), 200)
+# --------------------------------------------------
+# Fit
+# --------------------------------------------------
 
 if folder_type == "eps":
-    y_scaled = emittance_array * 1e3
 
-    m_scaled, q_scaled = np.polyfit(param_values, y_scaled, 1)
+    # Legge lineare: eps_eq = m * nu_m + q
+    m, q = np.polyfit(xs, ys, 1)
 
-    y_plot_fit = m_scaled * param_values + q_scaled
+    x_plot = np.linspace(xs.min(), xs.max(), 200)
+    y_plot = m * x_plot + q
 
-    sign_q = "+" if q_scaled >= 0 else "-"
-    eq_label = fr'${m_scaled:.1f} \cdot \nu_\mathrm{{m}} {sign_q} {abs(q_scaled):.1f}$'
+    print(f"\nFit lineare: eps_eq = m * nu_m + q")
+    print(f"m = {m:.6g}")
+    print(f"q = {q:.6g}")
 
-    x_plot_fit = param_values
-    y_plot_scatter = y_scaled
-    y0_line = None
+    equation_label = (
+        rf"${m:.1f}\,\nu_{{\mathrm{{m}}}} {q:+.1f}$"
+    )
 
-elif folder_type == "nu":
-    def fit_powerlaw_asympt(x, y0, A, b):
-        return y0 + A * (x ** b)
+else:
 
-    y0_init = ys.min() * 0.8                  
-    b_init = -2                             
-    A_init = (ys.max() - y0_init) * (xs.mean() ** abs(b_init))
-    
-    p0 = [y0_init, A_init, b_init]
+    # Legge di potenza con offset:
+    # eps_eq = y0 + A * x**b
 
-    bounds = ([0.0, 0.0, -15.0], [ys.min(), np.inf, -0.1])
+    def power_law(x, y0, A, b):
+        return y0 + A * x**b
 
-    popt, _ = curve_fit(fit_powerlaw_asympt, xs, ys, p0=p0, bounds=bounds, maxfev=20000)
+    p0 = [
+        max(0.0, ys.min() * 0.8),
+        max(ys.max() - ys.min(), 1e-6),
+        -1.0
+    ]
+
+    bounds = (
+        [0.0, 0.0, -15.0],
+        [ys.min(), np.inf, -0.1]
+    )
+
+    popt, pcov = curve_fit(
+        power_law,
+        xs,
+        ys,
+        p0=p0,
+        bounds=bounds,
+        maxfev=50000
+    )
+
     y0_fit, A_fit, b_fit = popt
+    errors = np.sqrt(np.diag(pcov))
 
-    print(f"Risultati Fit ALS -> y0: {y0_fit:.4f}, A: {A_fit:.3e}, b: {b_fit:.3f}")
+    x_plot = np.linspace(xs.min(), xs.max(), 200)
+    y_plot = power_law(x_plot, *popt)
 
-    # Punti per il plot
-    x_plot_fit = x_fit
-    y_plot_fit = fit_powerlaw_asympt(x_fit, y0_fit, A_fit, b_fit)
-    
-    y_plot_scatter = ys
-    y0_line = y0_fit
+    print("\nFit a legge di potenza con offset:")
+    print(f"y0 = {y0_fit:.5f} +/- {errors[0]:.5f}")
+    print(f"A  = {A_fit:.5e} +/- {errors[1]:.5e}")
+    print(f"b  = {b_fit:.5f} +/- {errors[2]:.5f}")
 
-    A_str = f"{A_fit:.1e}".replace("e+0", r" \cdot 10^{").replace("e+", r" \cdot 10^{")
-    eq_label = rf"${y0_fit:.2f} + ({A_str}}} \ \text{{s}}^{{{b_fit:.2f}}}) \cdot (a \omega_\text{{m}})^{{ {b_fit:.2f} }}$"
-    #eq_label = rf"${y0_fit:.2f} + ({A_str}}} \ \text{{s}}^{{-1.3}}) \cdot (a \omega_\text{{m}})^{{-1.3}}$"
+    A_str = f"{A_fit:.1e}"
+    mantissa, exponent = A_str.split("e")
+    exponent = int(exponent)
 
+    equation_label = (
+        rf"${y0_fit:.2f} + "
+        rf"({mantissa} \cdot 10^{{{exponent}}} "
+        rf"\,\mathrm{{s}}^{{{b_fit:.2f}}})"
+        rf"\cdot (a\omega_\mathrm{{m}})^{{{b_fit:.2f}}}$"
+    )
+
+    """equation_label = (
+            rf"${y0_fit:.2f} + "
+            rf"({mantissa} \cdot 10^{{{exponent}}} "
+            rf"\,\mathrm{{s}}^{{-1.5}})"
+            rf"\cdot (a\omega_\mathrm{{m}})^{{-1.5}}$"
+        )"""
+
+# --------------------------------------------------
+# Grafico
+# --------------------------------------------------
 
 # --- 3. Creazione Grafico ---
 plt.figure(figsize=(10, 5))
 
 if folder_type == "nu":
-    plt.axhline(y=y0_line, color='gray', linestyle='--', linewidth=2.5, alpha=1, zorder=1)
+    plt.axhline(
+        y=y0_fit,
+        color="gray",
+        linestyle="--",
+        linewidth=2.5,
+        alpha=1,
+        zorder=1
+    )
+    plt.xlabel(r"$a\omega_\text{m}$ [$\text{s}^{-1}$]", fontsize=20)
+elif folder_type == "eps":
+    plt.xlabel(r"$\nu_\text{m}$", fontsize=20)
 
-plt.scatter(param_values, y_plot_scatter, color='blue', s=80, label='Simulation', zorder=3)
-plt.plot(x_plot_fit, y_plot_fit, color='blue', linewidth=2.5, label=eq_label, zorder=2)
 
-if folder_type == "nu":
-    plt.xlabel(r"$a \omega_\text{m}$ [$\text{s}^{-1}$]", fontsize=20)
-else:
-    plt.xlabel(xlabel_text, fontsize=20)
+plt.scatter(
+    xs, ys,
+    color="blue",
+    s=80,
+    label="Simulation",
+    zorder=3
+)
+
+plt.plot(
+    x_plot, y_plot,
+    color="blue",
+    linewidth=2.5,
+    label=equation_label,
+    zorder=2
+)
 
 plt.ylabel(r"Equilibrium emittance $[10^{-3}]$", fontsize=20)
-plt.title(title_text, fontsize=20)
+plt.title(title, fontsize=20)
 
 plt.xticks(fontsize=18)
 plt.yticks(fontsize=18)
@@ -724,13 +776,16 @@ plt.tight_layout()
 
 output_dir = "./../../Desktop/plots/FCC_ee_WW"
 os.makedirs(output_dir, exist_ok=True)
-output_path = os.path.join(output_dir, filename_out)
-#plt.savefig(output_path, dpi=300, bbox_inches='tight')
+
+plt.savefig(os.path.join(output_dir, filename_out), dpi=300, bbox_inches="tight")
 
 plt.show()
 
 
 # %% --- 1. Grafico Log-Log (sottraendo l'asintoto y0_line) ---
+
+# Asintoto del fit principale
+y0_line = y0_fit
 
 # Differenza tra dati scalati e asintoto scalato
 y_diff = ys - y0_line
@@ -753,10 +808,16 @@ plt.loglog(x_log, y_log, 'bo', markersize=8, label=r'Dati - $y_0$')
 # Curva di fit nello spazio logaritmico
 x_log_line = np.linspace(x_log.min(), x_log.max(), 200)
 y_log_fit = np.exp(log_A) * (x_log_line ** b_log)
-plt.plot(x_log_line, y_log_fit, 'r--', linewidth=2, 
-         label=fr'Fit Log-Log ($b = {b_log:.2f}$)')
 
-plt.xlabel(r"$a \omega_\text{m}$ [$\text{s}^{-1}$]", fontsize=18)
+plt.plot(
+    x_log_line,
+    y_log_fit,
+    'r--',
+    linewidth=2,
+    label=fr'Fit Log-Log ($b = {b_log:.2f}$)'
+)
+
+plt.xlabel(r"$a\omega_\text{m}$ [$\text{s}^{-1}$]", fontsize=18)
 plt.ylabel(r"Equilibrium emittance - $y_0$ [$10^{-3}$]", fontsize=18)
 plt.xticks(fontsize=16)
 plt.yticks(fontsize=16)
@@ -770,33 +831,54 @@ plt.show()
 # %% --- 2. Scansione Chi^2 vs Esponente b ---
 
 # Intervallo di esponenti b da esplorare
-b_vals = np.linspace(-10.0, -2, 300)
+b_vals = np.linspace(-6.0, -1, 300)
 chi2_list = []
 
 for b_fixed in b_vals:
+
     # Modello con b fisso: si fittano soltanto l'asintoto y0 e l'ampiezza A sui dati scalati ys
     def model_fixed_b(x, y0, A):
         return y0 + A * (x ** b_fixed)
-    
+
     try:
         # p0 basato sui valori reali: [y0_line, ampiezza_iniziale]
-        popt_fixed, _ = curve_fit(model_fixed_b, xs, ys, p0=[y0_line, 1e10], maxfev=10000)
+        popt_fixed, _ = curve_fit(
+            model_fixed_b,
+            xs,
+            ys,
+            p0=[y0_line, 1e10],
+            maxfev=10000
+        )
+
         y_pred = model_fixed_b(xs, *popt_fixed)
+
         # Calcolo della somma dei quadrati dei residui (proporzionale al Chi^2)
         chi2 = np.sum((ys - y_pred) ** 2)
+
     except RuntimeError:
         chi2 = np.nan
-        
+
     chi2_list.append(chi2)
 
 chi2_arr = np.array(chi2_list)
 
 plt.figure(figsize=(8, 5))
-plt.plot(b_vals, chi2_arr, 'b-', linewidth=2.5, label=r'$\chi^2$ (Somma quadrati residui)')
+plt.plot(
+    b_vals,
+    chi2_arr,
+    'b-',
+    linewidth=2.5,
+    label=r'$\chi^2$ (Somma quadrati residui)'
+)
 
 # Evidenziamo con una linea verticale il valore b_fit ottenuto dal fit libero
-plt.axvline(x=b_fit, color='r', linestyle='--', linewidth=2, 
-            label=fr'Minimo libero ($b = {b_fit:.2f}$)')
+plt.axvline(
+    x=b_fit,
+    color='r',
+    linestyle='--',
+    linewidth=2,
+    label=fr'Minimo libero ($b = {b_fit:.2f}$)'
+)
 
 plt.xlabel(r'Esponente $b$', fontsize=18)
 plt.ylabel(r'$\chi^2$ (A.U.)', fontsize=18)

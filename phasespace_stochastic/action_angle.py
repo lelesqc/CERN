@@ -27,12 +27,11 @@ def run_action_angle(mode, n_particles):
   else:
     n_steps = q.shape[0]
 
-  actions_list = np.zeros((n_steps, actual_n_particles))
-  energies = np.zeros((n_steps, actual_n_particles))
-  vars = np.zeros(n_steps)
+  actions_list = np.full((n_steps, actual_n_particles), np.nan)
+  energies = np.full((n_steps, actual_n_particles), np.nan)
 
-  x = np.zeros((n_steps, actual_n_particles))
-  y = np.zeros((n_steps, actual_n_particles))
+  x = np.full((n_steps, actual_n_particles), np.nan)
+  y = np.full((n_steps, actual_n_particles), np.nan)
 
   for j in tqdm(range(actual_n_particles)):
     for i in range(n_steps):
