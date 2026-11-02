@@ -572,42 +572,45 @@ check_moment("<x^3 y^2>", np.mean(x**3 * y**2) / (sx**3 * sy**2), 0.0)
 
 # %%
 
-
 import os
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-from params_fcc_ww import Params
+from params_fcc_z import Params
 par = Params()
 
-folder_type = "eps"
+folder_type = "nu"
 
 # --------------------------------------------------
 # Configurazione
 # --------------------------------------------------
 
-if folder_type == "eps":
-    folder_path = "./final_data_otherconfig/ww/eps_0.0650"
-    param_values = np.linspace(0.850, 0.900, 16)
+config_data = "z"
 
-    epsilon_title = 0.065 * par.omega_s
+if folder_type == "eps":
+    eps = 0.0280
+    folder_path = f"./final_data_otherconfig/{config_data}/eps_0.0280"
+    param_values = np.linspace(0.840, 0.940, 16)
+
+    print(folder_path)
+
+    epsilon_title = eps * par.omega_s
+    print(epsilon_title)
 
     xlabel = r"$\nu_{\mathrm{m}}$"
-    title = r"$a\omega_\mathrm{m} = 853.7\,\mathrm{{s^{{-1}}}}$"
+    title = r"$a\omega_\mathrm{m} = {15.1}\,\mathrm{{s^{{-1}}}}$"
     filename_out = "eq_emittance_fixed_eps.png"
 
 elif folder_type == "nu":
-
-    folder_path = "./final_data_otherconfig/als/nu_0.850"
-
-    epsilon_values = np.linspace(0.020, 0.050, 16)
-
+    nu = 0.870
+    folder_path = f"./final_data_otherconfig/{config_data}/nu_0.870"
+    epsilon_values = np.linspace(0.020, 0.080, 16)
     param_values = epsilon_values * par.omega_s
 
     xlabel = r"$\omega_{\mathrm{m}}$ [$\mathrm{s}^{-1}$]"
-    title = r"$\nu_{\mathrm{m}} = 0.85$"
+    title = r"$\nu_{\mathrm{m}} = 0.87$"
     filename_out = "eq_emittance_fixed_nu.png"
 
 else:
@@ -774,12 +777,17 @@ plt.legend(fontsize=18)
 plt.grid(False)
 plt.tight_layout()
 
-output_dir = "./../../Desktop/plots/FCC_ee_WW"
+output_dir = "./../../Desktop/plots/FCC_ee_Z"
 os.makedirs(output_dir, exist_ok=True)
 
-plt.savefig(os.path.join(output_dir, filename_out), dpi=300, bbox_inches="tight")
+#plt.savefig(os.path.join(output_dir, filename_out), dpi=300, bbox_inches="tight")
 
 plt.show()
+
+#%%
+
+print(0.08 * par.omega_s * 0.87)
+print(par.omega_m)
 
 
 # %% --- 1. Grafico Log-Log (sottraendo l'asintoto y0_line) ---
