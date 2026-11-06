@@ -11,8 +11,7 @@ class Params:
         self.full_radius = 31.32
         self.h = 328
         self.C_gamma = 8.85e-5    # m * GeV^-3
-        self.nu_s = 0.0075
-        self.omega_rev = 1.52e6
+        self.omega_rev = 2 * np.pi * 1.52e6
         self.V = 1.5e6
         self.radius = 4.01
         self.mc2 = 0.511e6
@@ -66,6 +65,6 @@ class Params:
         self.n_steps = self.steps * self.N_turn
         self.t = 0.0
 
-        if self.damp_rate != 0:
+        """if self.damp_rate != 0:
             print(1 / (2 * self.damp_rate))
-            print(self.n_steps * self.dt)
+            print(self.n_steps * self.dt)"""
