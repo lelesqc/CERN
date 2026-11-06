@@ -8,18 +8,17 @@ class Params:
         thermal_bath = os.environ.get("THERMAL_BATH")      
 
         # ------------ machine ----------------
-        self.bending_radius = 14430 
-        self.h = 130000
+        self.E_s = 45.6e9         # eV
+        self.ring_radius = 14430 
+        self.h = 121200
         self.C_gamma = 8.85e-5    # m * GeV^-3
-        self.nu_s = 0.025
         self.T_rev = 302.54e-6
-        self.V = 0.1e9
-        self.radius = 10.76e3
+        self.V = 0.0885e9
+        self.radius = 10.021e3
         self.mc2 = 0.511e6
-        self.gamma = 89236.8
-        self.momentum_compaction = 14.8e-6 
-        self.damping_part_number = self.momentum_compaction * self.bending_radius / self.radius
-        self.E_s = self.gamma * self.mc2
+        self.gamma = self.E_s / self.mc2
+        self.momentum_compaction = 28.52e-6
+        self.damping_part_number = self.momentum_compaction * self.ring_radius / self.radius
         self.eta = self.momentum_compaction - 1/self.gamma**2
         self.U_0 = 0.039e9
         self.omega_rev = 2 * np.pi / self.T_rev
