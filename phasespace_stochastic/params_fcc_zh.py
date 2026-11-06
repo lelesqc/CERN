@@ -8,24 +8,23 @@ class Params:
         thermal_bath = os.environ.get("THERMAL_BATH")      
 
         # ------------ machine ----------------
-        self.bending_radius = 14430 
-        self.h = 130000
+
+        self.E_s = 120e9
+        self.ring_radius = 14430 
+        self.h = 121200
         self.C_gamma = 8.85e-5    # m * GeV^-3
         
-        # --- AGGIORNATI PER FCC-ee ZH (Baseline FS 2505.00274) ---
-        self.nu_s = 0.035                         # Synchrotron tune per ZH
-        self.T_rev = 302.54e-6
-        self.V = 2.1e9                            # RF Voltage aumentato a 2.1 GV
-        self.radius = 10.76e3
+        self.T_rev = 302.40e-6
+        self.V = 2.1e9                            
+        self.radius = 10.021e3
         self.mc2 = 0.511e6
-        self.gamma = 234833.7                     # Gamma relativistico per E = 120 GeV
-        self.momentum_compaction = 7.3e-6         # alpha_c confermato
-        self.U_0 = 1.81e9                         # Energy loss ricalcolato (1.81 GeV)
+        self.momentum_compaction = 7.52e-6
+        self.U_0 = 1.86e9                         
         
         # -----------------------------------------
         
-        self.damping_part_number = self.momentum_compaction * self.bending_radius / self.radius
-        self.E_s = self.gamma * self.mc2
+        self.gamma = self.E_s / self.mc2
+        self.damping_part_number = self.momentum_compaction * self.ring_radius / self.radius
         self.eta = self.momentum_compaction - 1/self.gamma**2
         self.omega_rev = 2 * np.pi / self.T_rev
 
@@ -37,10 +36,6 @@ class Params:
             self.damp_rate = self.U_0 / (2 * self.T_rev * self.E_s) * (2 + self.damping_part_number)
 
         self.beta = np.sqrt(1 - 1/self.gamma**2)
-        
-        self.N = 100
-        self.N_turn = 500
-        #self.N_turn = 50
         
         self.phi_0 = 0.0
         self.e = 1
@@ -66,10 +61,24 @@ class Params:
         else:
             self.a = self.epsilon / self.nu_m
 
+        self.N = 100
+
         self.omega_m = self.nu_m * self.omega_s
         self.T_s = 2 * np.pi / self.omega_s
         self.dt = self.T_s / self.N
         self.T_mod = 2 * np.pi / self.omega_m
+
         self.steps = int(round(self.T_mod / self.dt))
+
+        if self.damp_rate > 0:
+            self.tau_d = self.beta**2 / self.damp_rate
+            self.N_turn = int(np.ceil(
+                5 * self.tau_d / (self.steps * self.dt)
+            ))
+        else:
+            self.tau_d = np.inf
+            self.N_turn = 250 
+
         self.n_steps = self.steps * self.N_turn
         self.t = 0.0
+

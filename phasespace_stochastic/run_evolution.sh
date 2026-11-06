@@ -1,13 +1,13 @@
 #!/bin/bash
 
 MACHINE="FCC"    # FCC, ALS
-INIT_COND="gaussian"   # gaussian, circle, grid, grid_big
-PARTICLES=10000
-CONFIG="z"    # z, ww, zh, tt
-MODE="evolution"    # phasespace, evolution
+INIT_COND="grid"   # gaussian, circle, grid, grid_big
+PARTICLES=75
+CONFIG="zh"    # z, ww, zh, tt, als
+MODE="phasespace"    # phasespace, evolution
 
 MODULATION="yes"    
-THERMAL_BATH="yes"
+THERMAL_BATH="no"
 
 if [ "$MACHINE" == "FCC" ]; then
     DATA_SUFFIX="fcc"

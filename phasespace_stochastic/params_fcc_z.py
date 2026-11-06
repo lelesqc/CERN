@@ -12,7 +12,7 @@ class Params:
         self.ring_radius = 14430 
         self.h = 121200
         self.C_gamma = 8.85e-5    # m * GeV^-3
-        self.T_rev = 302.54e-6
+        self.T_rev = 302.40e-6
         self.V = 0.0885e9
         self.radius = 10.021e3
         self.mc2 = 0.511e6
@@ -32,9 +32,6 @@ class Params:
 
         self.beta = np.sqrt(1 - 1/self.gamma**2)
 
-        self.N = 100
-        self.N_turn = 200
-        
         self.phi_0 = 0.0
         self.e = 1
         self.lambd = np.sqrt(self.h * self.eta * self.omega_rev)
@@ -59,10 +56,24 @@ class Params:
         else:
             self.a = self.epsilon / self.nu_m
 
+        self.N = 100
+
         self.omega_m = self.nu_m * self.omega_s
         self.T_s = 2 * np.pi / self.omega_s
         self.dt = self.T_s / self.N
         self.T_mod = 2 * np.pi / self.omega_m
+
         self.steps = int(round(self.T_mod / self.dt))
+
+        if self.damp_rate > 0:
+            self.tau_d = self.beta**2 / self.damp_rate
+            self.N_turn = int(np.ceil(
+                5 * self.tau_d / (self.steps * self.dt)
+            ))
+            print(self.N_turn)
+        else:
+            self.tau_d = np.inf
+            self.N_turn = 250
+
         self.n_steps = self.steps * self.N_turn
         self.t = 0.0

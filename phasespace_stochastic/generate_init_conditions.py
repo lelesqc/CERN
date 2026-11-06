@@ -138,24 +138,20 @@ def generate_gaussian(n_particles):
     action_list = []
     theta_list = []
 
-    region = "cen"
-
-    name_dir = f"eps_{par.epsilon:.3f}"
-    freq = f"nu_{par.nu_m:.2f}"
-    
-    dir_path = Path(f"./other_config/{config}/{freq}/{name_dir}")
-    dir_path.mkdir(parents=True, exist_ok=True)
-
-    name_dir = "eps_0.028"
-    freq = "nu_0.87"
+    freq = "nu_0.850"
 
     x_center = 0
     y_center = 0
 
-    config_name="ww"
-
-    base_dir = f"./other_config/{config_name}/{freq}"
-    npz_path = os.path.join(base_dir, "eps_0.028", f"final_distr_{region}.npz")
+    if machine=="fcc":
+        config_name="ww"
+        base_dir = f"./final_data_otherconfig/{config_name}/{freq}"
+        npz_path = os.path.join(base_dir, f"isl_eps_0.0650.npz")
+    else:
+        config_name="als"
+        base_dir = f"./final_data_otherconfig/{config_name}/{freq}"
+        npz_path = os.path.join(base_dir, f"isl_eps_0.0400.npz")
+    
     data = np.load(npz_path)    
 
     x = data["x"]

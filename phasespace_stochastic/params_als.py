@@ -32,8 +32,6 @@ class Params:
 
         self.beta = np.sqrt(1 - 1/self.gamma**2)
             
-        self.N = 100
-        self.N_turn = 250    # x10 damping time
         self.phi_0 = 0.0
         self.e = 1
         self.lambd = np.sqrt(self.h * self.eta * self.omega_rev)
@@ -57,14 +55,23 @@ class Params:
         else:
             self.a = self.epsilon / self.nu_m
 
+        self.N = 100
+
         self.omega_m = self.nu_m * self.omega_s
         self.T_s = 2 * np.pi / self.omega_s
         self.dt = self.T_s / self.N
         self.T_mod = 2 * np.pi / self.omega_m
+
         self.steps = int(round(self.T_mod / self.dt))
+
+        if self.damp_rate > 0:
+            self.tau_d = self.beta**2 / self.damp_rate
+            self.N_turn = int(np.ceil(
+                5 * self.tau_d / (self.steps * self.dt)
+            ))
+        else:
+            self.tau_d = np.inf
+            self.N_turn = 250
+
         self.n_steps = self.steps * self.N_turn
         self.t = 0.0
-
-        """if self.damp_rate != 0:
-            print(1 / (2 * self.damp_rate))
-            print(self.n_steps * self.dt)"""

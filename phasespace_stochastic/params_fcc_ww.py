@@ -13,7 +13,7 @@ class Params:
         self.h = 121200
         self.C_gamma = 8.85e-5    # m * GeV^-3
         
-        self.T_rev = 302.54e-6
+        self.T_rev = 302.40e-6
         self.V = 1.0e9                            
         self.radius = 10.021e3
         self.mc2 = 0.511e6
@@ -36,16 +36,12 @@ class Params:
 
         self.beta = np.sqrt(1 - 1/self.gamma**2)
         
-        self.N = 100
-        self.N_turn = 100
-        
         self.phi_0 = 0.0
         self.e = 1
         self.lambd = np.sqrt(self.h * self.eta * self.omega_rev)
         self.omega_s = self.omega_rev * np.sqrt(self.e * self.h * self.V * self.eta / (2 * np.pi * self.E_s * self.beta**2))
         self.A = self.omega_s / self.lambd
         self.Cq = 3.83e-13
-        #self.Cq = 0
         self.D = self.gamma / self.beta**3 * np.sqrt(self.damp_rate * self.Cq / self.radius)
         self.temperature = self.gamma**2 * self.h * self.eta * self.omega_rev * self.Cq / (2 * (2 + self.damping_part_number) * self.beta**4 * self.radius) 
 
@@ -62,11 +58,24 @@ class Params:
             self.a = 0
         else:
             self.a = self.epsilon / self.nu_m
+       
+        self.N = 100
 
         self.omega_m = self.nu_m * self.omega_s
         self.T_s = 2 * np.pi / self.omega_s
         self.dt = self.T_s / self.N
         self.T_mod = 2 * np.pi / self.omega_m
+
         self.steps = int(round(self.T_mod / self.dt))
+
+        if self.damp_rate > 0:
+            self.tau_d = self.beta**2 / self.damp_rate
+            self.N_turn = int(np.ceil(
+                5 * self.tau_d / (self.steps * self.dt)
+            ))
+        else:
+            self.tau_d = np.inf
+            self.N_turn = 250 
+
         self.n_steps = self.steps * self.N_turn
         self.t = 0.0
